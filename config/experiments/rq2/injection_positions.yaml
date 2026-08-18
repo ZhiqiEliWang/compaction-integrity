@@ -1,0 +1,135 @@
+experiment: different_positions
+runs:
+  # ------------ 100k context ------------
+  # top (baseline)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__48b92a3de7
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_top
+  - run_id: wildchat_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__920da2e4f9
+    label: wildchat_cat_100k_gpt_oss_120b_pi_mono_prompt_top
+  - run_id: wildchat_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__6c86744b0b
+    label: wildchat_cat_100k_qwen30b_anthropic_prompt_top
+  - run_id: wildchat_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__1bb81b6630
+    label: wildchat_cat_100k_recent_5_top
+  - run_id: wildchat_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__73609c6f08
+    label: wildchat_cat_100k_llmlingua2_t500_top
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_top
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__de43fbbfd6
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_top
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__40f84a540c
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_top
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__bd4967d31b
+    label: hermes_cat_100k_recent_5_top
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__9a86781c12
+    label: hermes_cat_100k_llmlingua2_t500_top
+
+  # middle
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f801b3c444
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_middle
+  - run_id: wildchat_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__10b754f44a
+    label: wildchat_cat_100k_gpt_oss_120b_pi_mono_prompt_middle
+  - run_id: wildchat_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__2ac4b9e81e
+    label: wildchat_cat_100k_qwen30b_anthropic_prompt_middle
+  - run_id: wildchat_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__69165a7f8d
+    label: wildchat_cat_100k_llmlingua2_t500_middle
+  - run_id: wildchat_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__a424a9923c
+    label: wildchat_cat_100k_recent_5_middle
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__4c4f7e85df
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_middle
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__2b1dea3858
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_middle
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__82f0ecc999
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_middle
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__be5d16cdf2
+    label: hermes_cat_100k_recent_5_middle
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__a0f9f7b641
+    label: hermes_cat_100k_llmlingua2_t500_middle
+
+  # bottom
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__d75f73d74c
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_bottom
+  - run_id: wildchat_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__987dbec1ff
+    label: wildchat_cat_100k_gpt_oss_120b_pi_mono_prompt_bottom
+  - run_id: wildchat_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__3e3b7aa659
+    label: wildchat_cat_100k_qwen30b_anthropic_prompt_bottom
+  - run_id: wildchat_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__5034dfae38
+    label: wildchat_cat_100k_llmlingua2_t500_bottom
+  - run_id: wildchat_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__7ad4451f12
+    label: wildchat_cat_100k_recent_5_bottom
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__9a2ba8435f
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_bottom
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f5c2f3df20
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_bottom
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__72a11a3118
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_bottom
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__78c150afe0
+    label: hermes_cat_100k_recent_5_bottom
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__f8073b2ee2
+    label: hermes_cat_100k_llmlingua2_t500_bottom
+
+  # ------------ 50k context ------------
+  # top (baseline)
+  - run_id: wildchat_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__b0eb23376d
+    label: wildchat_cat_50k_gpt_oss_120b_anthropic_prompt_top
+  - run_id: wildchat_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__2689a9ab66
+    label: wildchat_cat_50k_gpt_oss_120b_pi_mono_prompt_top
+  - run_id: wildchat_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__b288d77c0b
+    label: wildchat_cat_50k_qwen30b_anthropic_prompt_top
+  - run_id: wildchat_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__895adaa835
+    label: wildchat_cat_50k_recent_5_top
+  - run_id: wildchat_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__bd51e7c87e
+    label: wildchat_cat_50k_llmlingua2_t500_top
+  - run_id: hermes_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__fec2df0c47
+    label: hermes_cat_50k_gpt_oss_120b_anthropic_prompt_top
+  - run_id: hermes_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__0b590722b5
+    label: hermes_cat_50k_gpt_oss_120b_pi_mono_prompt_top
+  - run_id: hermes_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__cdd5446bb4
+    label: hermes_cat_50k_qwen30b_anthropic_prompt_top
+  - run_id: hermes_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__849be16740
+    label: hermes_cat_50k_recent_5_top
+  - run_id: hermes_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__2fc458b9bb
+    label: hermes_cat_50k_llmlingua2_t500_top
+
+  # middle
+  - run_id: wildchat_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__c84b967487
+    label: wildchat_cat_50k_gpt_oss_120b_anthropic_prompt_middle
+  - run_id: wildchat_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__fecf8d7101
+    label: wildchat_cat_50k_gpt_oss_120b_pi_mono_prompt_middle
+  - run_id: wildchat_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__e932993e8f
+    label: wildchat_cat_50k_qwen30b_anthropic_prompt_middle
+  - run_id: wildchat_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__0278fc5067
+    label: wildchat_cat_50k_recent_5_middle
+  - run_id: wildchat_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__849925f9ee
+    label: wildchat_cat_50k_llmlingua2_t500_middle
+  - run_id: hermes_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__6530d99040
+    label: hermes_cat_50k_gpt_oss_120b_anthropic_prompt_middle
+  - run_id: hermes_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__dc3879a662
+    label: hermes_cat_50k_gpt_oss_120b_pi_mono_prompt_middle
+  - run_id: hermes_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__d6cd763fda
+    label: hermes_cat_50k_qwen30b_anthropic_prompt_middle
+  - run_id: hermes_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__6fb4d927d7
+    label: hermes_cat_50k_recent_5_middle
+  - run_id: hermes_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__789047cab5
+    label: hermes_cat_50k_llmlingua2_t500_middle
+
+  # bottom
+  - run_id: wildchat_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__bbdb6fffde
+    label: wildchat_cat_50k_gpt_oss_120b_anthropic_prompt_bottom
+  - run_id: wildchat_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__83fedb4ecf
+    label: wildchat_cat_50k_gpt_oss_120b_pi_mono_prompt_bottom
+  - run_id: wildchat_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__347465678f
+    label: wildchat_cat_50k_qwen30b_anthropic_prompt_bottom
+  - run_id: wildchat_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__af08fbf06a
+    label: wildchat_cat_50k_recent_5_bottom
+  - run_id: wildchat_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__67047a4be7
+    label: wildchat_cat_50k_llmlingua2_t500_bottom
+  - run_id: hermes_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__7a27a5474f
+    label: hermes_cat_50k_gpt_oss_120b_anthropic_prompt_bottom
+  - run_id: hermes_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__77aeef5389
+    label: hermes_cat_50k_gpt_oss_120b_pi_mono_prompt_bottom
+  - run_id: hermes_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__b65a1bf0aa
+    label: hermes_cat_50k_qwen30b_anthropic_prompt_bottom
+  - run_id: hermes_cat_50k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__2d9900ef1c
+    label: hermes_cat_50k_recent_5_bottom
+  - run_id: hermes_cat_50k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__95e8b4878c
+    label: hermes_cat_50k_llmlingua2_t500_bottom

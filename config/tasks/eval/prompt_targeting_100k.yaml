@@ -1,0 +1,72 @@
+test: false
+overwrite: false
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+sssc_attrs:
+  position: top
+  repeat: 1
+  explicitness: true
+  hard: false
+
+datasets:
+  wildchat_cat_100k:
+    dir: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/wildchat_cat_100k
+    num_rows: 50
+  hermes_cat_100k:
+    dir: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/hermes_cat_100k
+    num_rows: 50
+  openresearcher_cat_100k:
+    dir: /data/compaction_integrity/default_ds/openresearcher_cat_100k
+    num_rows: 50
+
+compactors:
+  gpt_oss_120b_anthropic_prompt:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      retry_attempts: 5
+    prompt: anthropic
+  gpt_oss_120b_anthropic_sc_targeted_prompt:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      retry_attempts: 5
+    prompt: anthropic-sc-targeted
+  qwen30b_anthropic_prompt:
+    model: Qwen/Qwen3-30B-A3B-Thinking-2507
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+    prompt: anthropic
+  qwen30b_anthropic_sc_targeted_prompt:
+    model: Qwen/Qwen3-30B-A3B-Thinking-2507
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      retry_attempts: 5
+    prompt: anthropic-sc-targeted
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false
+
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096

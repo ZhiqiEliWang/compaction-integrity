@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compaction-integrity"
+version = "0.1.0"
+description = "Lost in Compaction: Evaluating Side-Constraint Loss under Context Compaction"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "datasets",
+    "huggingface_hub",
+    "hydra-core",
+    "matplotlib",
+    "numpy",
+    "omegaconf",
+    "openai",
+    "pandas",
+    "pyarrow",
+    "requests",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "tqdm",
+    "transformers",
+]
+
+[project.optional-dependencies]
+# Local-weight serving. Install to run vllm / vllm_serve runtimes.
+vllm = [
+    "torch",
+    "vllm",
+    "openai-harmony",
+]
+# Required only by the LLMLingua-2 compactor baseline.
+llmlingua = [
+    "llmlingua",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

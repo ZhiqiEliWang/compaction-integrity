@@ -1,0 +1,34 @@
+test: false # if true, only run 5 entries from each dataset and store under sc_extractor_runs_test/
+overwrite: false
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+sssc_attrs:
+  position: top   # top | middle | bottom; ignored when repeat > 1
+  repeat: 1
+  explicitness: false
+  hard: false
+
+datasets:
+  hermes_cat_100k:
+    dir: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/hermes_cat_100k
+    num_rows: 50
+
+sc_extractors:
+  qwen3_5_9b:
+    model: Qwen/Qwen3.5-9B
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      enable_thinking: false
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false

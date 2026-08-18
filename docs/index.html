@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lost in Compaction</title>
+<meta name="description" content="Evaluating Side-Constraint Loss under Context Compaction. Compactors retain 17% of user-issued session constraints on average; an SC-aware extractor recovers over 90%.">
+<meta property="og:title" content="Lost in Compaction">
+<meta property="og:description" content="Evaluating Side-Constraint Loss under Context Compaction">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://zhiqieliwang.github.io/compaction-integrity/static/fig1-failure-mode.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{ color-scheme:light; --bg:#fff; --text:#000; --muted:#666; --rule:#ddd; }
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0 auto; max-width:44rem; padding:5rem 1.5rem 6rem;
+  background:var(--bg); color:var(--text);
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:17px; line-height:1.6;
+}
+h1{font-size:1.9rem;font-weight:normal;margin:0 0 .3rem;line-height:1.2}
+.sub{margin:0 0 1.6rem;color:var(--muted)}
+.meta{margin:0 0 .2rem}
+.affil{margin:0 0 1rem;color:var(--muted)}
+.links{margin:0 0 3rem}
+a{color:inherit}
+h2{font-size:1rem;font-weight:bold;margin:3rem 0 .8rem;letter-spacing:.02em}
+p{margin:0 0 1rem}
+figure{margin:1.6rem 0}
+figure img{display:block;width:100%;height:auto}
+figcaption{color:var(--muted);font-size:.85rem;line-height:1.5;margin-top:.6rem}
+.figrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.figrow figure{margin:1.6rem 0 0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:460px;font-size:.9rem;margin:1.4rem 0 .6rem}
+th,td{padding:.35rem .8rem;text-align:right;font-weight:normal}
+th:first-child,td:first-child{text-align:left}
+thead th{border-bottom:1px solid var(--text)}
+tbody tr:last-child td{border-bottom:1px solid var(--text)}
+caption{caption-side:bottom;text-align:left;color:var(--muted);font-size:.8rem;padding-top:.6rem;line-height:1.5}
+pre{
+  font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:.8rem;line-height:1.6;overflow-x:auto;
+  margin:1rem 0;padding:0;
+}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em}
+.sc{font-variant:small-caps}
+footer{margin-top:4rem;padding-top:1rem;border-top:1px solid var(--rule);color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<h1>Lost in Compaction</h1>
+<p class="sub">Evaluating Side-Constraint Loss under Context Compaction</p>
+<p class="meta"><a href="https://zhiqieliwang.github.io/">Zhiqi Wang</a>, Yichi Zhang, Dongwon Lee, Yuchen Yang</p>
+<p class="affil">The Pennsylvania State University</p>
+<p class="links">
+  <a href="https://arxiv.org/abs/2608.11242">arXiv</a> &nbsp;
+  <a href="https://github.com/ZhiqiEliWang/compaction-integrity">Code</a>
+</p>
+
+<h2>Abstract</h2>
+<p>When the context window is under pressure, LLM systems compact prior context to
+continue ongoing tasks. We identify a class of user-issued instructions,
+<em>session constraints</em> (SCs), such as &ldquo;do not delete any emails until I
+confirm,&rdquo; that are meant to constrain the model&rsquo;s behavior for the remainder
+of a session but are silently dropped during compaction. To quantify this loss we
+introduce <span class="sc">Compint</span>, an evaluation suite that measures compactors
+across three long-context scenarios: multi-turn chat, agentic trajectory, and
+long-horizon research. Current compactors retain only 17% of injected SCs on average,
+and most perform worse than running the same task without compaction. Retention varies
+with compactor, prompt, context length, SC phrasing, and injection location, showing
+that the loss is systematic rather than tied to any single setting. We propose an
+SC-aware extractor that runs alongside the compactor as a plug-and-play module,
+reaching over 90% retention across all three scenarios without modifying the compactor
+or the LLM.</p>
+
+<h2>Failure mode</h2>
+<figure>
+  <img src="static/fig1-failure-mode.svg" alt="Three panels: the user states a side constraint and the agent honors it; the compactor summarizes and drops the constraint; the agent then acts without confirming, violating it.">
+  <figcaption>Figure 1. The agent honors the constraint, loses it to compaction, then violates it
+  without signalling that anything was dropped.</figcaption>
+</figure>
+
+<h2>Evaluation suite</h2>
+<p><span class="sc">Compint</span> crosses four axes. Fifteen hand-written SCs span five
+categories; each is rendered under four framings (constraint strength by explicitness)
+and injected into a 100K-token context at one of four locations. The context is then
+compacted and scored two ways: <em>retention</em>, whether the SC still appears in the
+summary, and <em>compliance</em>, whether the model behaves according to it on a
+forced-choice probe.</p>
+<figure>
+  <img src="static/fig2-compint-overview.svg" alt="Overview of COMPINT: the five-category SC taxonomy, the four framings and four injection locations, and the retention and compliance evaluation paths.">
+  <figcaption>Figure 2. The <span class="sc">Compint</span> evaluation suite.</figcaption>
+</figure>
+
+<h2>Retention by compactor</h2>
+<p>Fraction of injected side constraints preserved through compaction, at 100K tokens of
+input context. Every open-source compactor loses most constraints, and the two non-LLM
+methods lose all of them.</p>
+<div class="scroll">
+  <table>
+    <caption>&dagger; GPT-5.4-mini is evaluated on a longer context to match its larger window,
+    and on fewer trials due to cost. N = 750 per compaction condition (50 contexts by 15 SCs).</caption>
+    <thead><tr><th>Compactor</th><th>Hermes Agent (%)</th><th>OpenResearcher (%)</th><th>WildChat (%)</th></tr></thead>
+    <tbody>
+      <tr><td>Recent-5 truncation</td><td>0.4</td><td>0.0</td><td>0.0</td></tr>
+      <tr><td>LLMLingua-2 (T500)</td><td>0.0</td><td>0.0</td><td>0.0</td></tr>
+      <tr><td>Gemma-4-E4B (Anthropic)</td><td>12.5</td><td>3.6</td><td>2.0</td></tr>
+      <tr><td>Qwen3-30B (Anthropic)</td><td>2.1</td><td>1.1</td><td>3.3</td></tr>
+      <tr><td>gpt-oss-120b (Anthropic)</td><td>18.5</td><td>8.4</td><td>1.3</td></tr>
+      <tr><td>gpt-oss-120b (pi-mono)</td><td>36.3</td><td>19.6</td><td>0.0</td></tr>
+      <tr><td>GPT-5.4-mini (Anthropic)<sup>&dagger;</sup></td><td>53.7</td><td>26.0</td><td>28.3</td></tr>
+      <tr><td>GPT-5.4-mini (pi-mono)<sup>&dagger;</sup></td><td>88.4</td><td>98.0</td><td>6.7</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>Two non-LLM compactors retain nothing on any dataset, and the average across all
+compactors is 17%.</p>
+
+<h2>Where the loss comes from</h2>
+<p>Retention shifts with where the constraint sits in the context: constraints stated
+later survive better, tracking proximity to the compaction instruction. It also varies
+with what the constraint binds, and <em>process</em> constraints are retained least
+across every compactor. No compactor exceeds 36% on any SC type.</p>
+<div class="figrow">
+  <figure>
+    <img src="static/fig5-retention-by-position.svg" alt="Heatmap of SC retention rate by injection location (top, middle, bottom) for each dataset and compactor pair.">
+    <figcaption>Figure 3. Retention by injection location.</figcaption>
+  </figure>
+  <figure>
+    <img src="static/fig6-retention-by-type.svg" alt="Heatmap of SC retention rate by SC type for each compactor, averaged over the three datasets.">
+    <figcaption>Figure 4. Retention by SC type, averaged over datasets.</figcaption>
+  </figure>
+</div>
+
+<h2>SC-aware extractor</h2>
+<p>The extractor separates constraint tracking from summarization. A small model reads
+only the user turns, decides whether each states a constraint, and maintains a running
+list that is appended to the compacted context. It is training-free, requires no change
+to the compactor or the agent LLM, and skips assistant and tool turns, so its cost grows
+slowly as contexts get longer.</p>
+<div class="scroll">
+  <table>
+    <caption>Extractor is Qwen3.5-9B. Retention is the fraction of injected SCs recovered.</caption>
+    <thead><tr><th>Dataset</th><th>Retention (%)</th><th>Latency (s / context)</th></tr></thead>
+    <tbody>
+      <tr><td>Hermes Agent</td><td>95.6</td><td>0.45</td></tr>
+      <tr><td>OpenResearcher</td><td>95.1</td><td>0.03</td></tr>
+      <tr><td>WildChat</td><td>90.3</td><td>12.93</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Code</h2>
+<p>Dataset construction, experiment runners, analysis code, and the extractor are on
+<a href="https://github.com/ZhiqiEliWang/compaction-integrity">GitHub</a>. The README maps
+each section of the paper to the runner and analysis module that produces it.</p>
+<pre>git clone https://github.com/ZhiqiEliWang/compaction-integrity
+cd compaction-integrity
+pip install -e .
+bash exp_sh/populate_dataset.sh   # build the long-context datasets
+bash exp_sh/rq1/run_main.sh       # reproduce the main table</pre>
+
+<h2>Citation</h2>
+<pre>@misc{wang2026lostcompactionevaluatingsideconstraint,
+      title={Lost in Compaction: Evaluating Side-Constraint Loss under Context Compaction}, 
+      author={Zhiqi Wang and Yichi Zhang and Dongwon Lee and Yuchen Yang},
+      year={2026},
+      eprint={2608.11242},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2608.11242}, 
+}</pre>
+
+<footer>Code released under the MIT License.</footer>
+
+</body>
+</html>

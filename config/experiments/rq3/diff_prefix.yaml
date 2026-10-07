@@ -1,0 +1,46 @@
+experiment: diff_prefix
+runs:
+  # non-explicit and non-hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__eb6e205786
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_non_explicit_non_hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__a60c2c29be
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_non_explicit_non_hard
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__694f6532eb
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_non_explicit_non_hard
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__6fa7b3cbab
+    label: hermes_cat_100k_recent_5_non_explicit_non_hard
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__1d6d36104d
+    label: hermes_cat_100k_llmlingua2_t500_non_explicit_non_hard
+  # non-explicit and hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__5c36773c69
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_non_explicit_hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f8d61e104f
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_non_explicit_hard
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__c4c9573bf3
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_non_explicit_hard
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__8d473d57b5
+    label: hermes_cat_100k_recent_5_non_explicit_hard
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__d7645dc91a
+    label: hermes_cat_100k_llmlingua2_t500_non_explicit_hard
+  # explicit and non-hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_explicit
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__de43fbbfd6
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_explicit
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__40f84a540c
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_explicit
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__bd4967d31b
+    label: hermes_cat_100k_recent_5_explicit
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__9a86781c12
+    label: hermes_cat_100k_llmlingua2_t500_explicit
+  # explicit and hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__68840b53cf
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt_explicit_hard
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__66cbc0d926
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt_explicit_hard
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f1644f87ed
+    label: hermes_cat_100k_qwen30b_anthropic_prompt_explicit_hard
+  - run_id: hermes_cat_100k__recent_5__gpt_oss_120b__llm_gpt_5_4__n50__full__48da7009e2
+    label: hermes_cat_100k_recent_5_explicit_hard
+  - run_id: hermes_cat_100k__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n50__full__eb0ef369f3
+    label: hermes_cat_100k_llmlingua2_t500_explicit_hard

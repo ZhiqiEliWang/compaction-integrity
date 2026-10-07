@@ -1,0 +1,52 @@
+test: false # if true, only run 5 entries from each dataset and store under runs_test/
+overwrite: true # if true, overwrite existing results for each canonical run_id
+
+retention_rate_only: true
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+sssc_attrs:
+  position: top   # top | middle | bottom; ignored when repeat > 1
+  repeat: 1
+  explicitness: true
+  hard: false
+
+datasets:
+  wildchat_cat_220k:
+    dir: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/wildchat_cat_220k
+    num_rows: 20
+
+compactors:
+  gpt_5.4_mini_pi_mono_prompt:
+    model: gpt-5.4-mini
+    provider: openai
+    kwargs:
+      batch: true
+      max_tokens: 4096
+    prompt: pi_mono # defined in prompt.py
+
+  gpt_5.4_mini_anthropic_prompt:
+    model: gpt-5.4-mini
+    provider: openai
+    kwargs:
+      batch: true
+      max_tokens: 4096
+    prompt: anthropic # defined in prompt.py
+
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false

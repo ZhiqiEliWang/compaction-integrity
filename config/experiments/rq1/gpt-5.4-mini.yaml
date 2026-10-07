@@ -1,0 +1,19 @@
+experiment: "gpt_5_4_mini"
+runs:
+  # openresearcher_cat_220k
+  - run_id: openresearcher_cat_220k__gpt_5_4_mini_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__9d8dc3facb
+    label: openresearcher_cat_220k_gpt_5_4_mini_pi_mono_prompt
+  - run_id: openresearcher_cat_220k__gpt_5_4_mini_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__f2353fb7ec
+    label: openresearcher_cat_220k_gpt_5_4_mini_anthropic_prompt
+
+  # wildchat_cat_220k
+  - run_id: wildchat_cat_220k__gpt_5_4_mini_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__b54337d04d
+    label: wildchat_cat_220k_gpt_5_4_mini_pi_mono_prompt
+  - run_id: wildchat_cat_220k__gpt_5_4_mini_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__811687f2a1
+    label: wildchat_cat_220k_gpt_5_4_mini_anthropic_prompt
+
+  # hermes_cat_220k
+  - run_id: hermes_cat_220k__gpt_5_4_mini_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__544d4106b8
+    label: hermes_cat_220k_gpt_5_4_mini_pi_mono_prompt
+  - run_id: hermes_cat_220k__gpt_5_4_mini_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n20__full__20388b6649
+    label: hermes_cat_220k_gpt_5_4_mini_anthropic_prompt

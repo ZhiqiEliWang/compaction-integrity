@@ -1,0 +1,43 @@
+experiment: repeat
+runs:
+  # Populate with run_ids produced by evaluation.py using the configs:
+  #   config/tasks/eval/wildchat100k.yaml          (sssc_attrs.repeat: 1)
+  #   config/tasks/eval/wildchat100k-repeat2.yaml  (sssc_attrs.repeat: 2)
+  #   config/tasks/eval/wildchat100k-repeat3.yaml  (sssc_attrs.repeat: 3)
+  # Use scripts/print_eval_run_ids.py to enumerate run_ids for each config.
+  # - run_id: <run_id_here>
+  #   label: <descriptive_label>
+
+# repeat 1 (from config/tasks/eval/wildchat100k.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__48b92a3de7
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat1
+# repeat 2 (from config/tasks/eval/wildchat100k-repeat2.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__7d9841c8bd
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat2
+# repeat 3 (from config/tasks/eval/wildchat100k-repeat3.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__2417d4187b
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat3
+# repeat 4 (from config/tasks/eval/wildchat100k-repeat4.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f8908ed76e
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat4
+# repeat 5 (from config/tasks/eval/wildchat100k-repeat5.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__a66d774164
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat5
+# repeat 6 (from config/tasks/eval/wildchat100k-repeat6.yaml)
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__682b86abeb
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat6
+# repeat 10
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__f7bd6e0c32
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat10
+# repeat 15
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__5796c073c9
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat15
+# repeat 20
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__3eca588f37
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat20
+# repeat 25
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__76a76dbf62
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat25
+# repeat 30
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__4475fea73b
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt_repeat30

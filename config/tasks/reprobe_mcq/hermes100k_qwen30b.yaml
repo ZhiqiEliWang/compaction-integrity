@@ -1,0 +1,25 @@
+test: false
+overwrite: false
+results_root: /data/compaction_integrity
+
+# Source: gpt-oss-120b (Anthropic-prompt compactor) + HermesAgent, probed by
+# gpt-oss-120b. We hold the compacted contexts fixed and swap the prober only.
+source_runs:
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt
+
+probe:
+  name: qwen30b
+  model: Qwen/Qwen3-30B-A3B-Thinking-2507
+  provider: vllm
+  kwargs:
+    batch: true
+    batch_size: 32
+    max_tokens: 4096
+    truncate_prompt_tokens: 10000
+
+cases:
+  full_with_sssc: true
+  full_without_sssc: true
+  compacted: true
+  compacted_post_sssc: true

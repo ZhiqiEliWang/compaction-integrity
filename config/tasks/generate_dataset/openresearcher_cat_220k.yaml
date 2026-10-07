@@ -1,0 +1,9 @@
+test: false
+output_dir: /data/compaction_integrity/default_ds/openresearcher_cat_220k
+
+dataset: openresearcher
+num_convo: 30
+
+stitching_method: trim_single_row
+concat: false
+target_size: 220k

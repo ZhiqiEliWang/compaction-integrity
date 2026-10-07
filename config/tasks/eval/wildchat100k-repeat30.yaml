@@ -1,0 +1,58 @@
+test: false # if true, only run 5 entries from each dataset and store under runs_test/
+overwrite: false # if true, overwrite existing results for each canonical run_id
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+sssc_attrs:
+  position: top   # top | middle | bottom; ignored when repeat > 1
+  repeat: 30
+  explicitness: true
+  hard: false
+
+datasets:
+  wildchat_cat_100k:
+    dir: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/wildchat_cat_100k
+    num_rows: 50
+
+compactors:
+  gpt_oss_120b_anthropic_prompt:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+    prompt: anthropic
+
+  # gpt_oss_120b_pi_mono_prompt:
+  #   model: openai/gpt-oss-120b
+  #   provider: vllm # local vllm
+  #   kwargs:
+  #     batch: true
+  #     max_tokens: 4096
+  #   prompt: pi_mono # defined in prompt.py
+    
+  # qwen30b_anthropic_prompt:
+  #   model: Qwen/Qwen3-30B-A3B-Thinking-2507
+  #   provider: vllm # local vllm
+  #   kwargs:
+  #     batch: true
+  #     max_tokens: 4096
+  #   prompt: anthropic # defined in prompt.py
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false
+
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096

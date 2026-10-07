@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SC annotation record 0.1-draft",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "annotation_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rubric_version": {
+      "const": "0.1-draft"
+    },
+    "primary_task": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_role": {
+      "type": "string",
+      "enum": [
+        "author_directive",
+        "expected_software_behavior",
+        "description",
+        "reproduction_step",
+        "template_instruction",
+        "quoted_instruction",
+        "mixed",
+        "unclear"
+      ]
+    },
+    "strict_sc": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "drop",
+        "uncertain"
+      ]
+    },
+    "broad_task_constraint": {
+      "type": "string",
+      "enum": [
+        "keep",
+        "drop",
+        "uncertain"
+      ]
+    },
+    "strict_exclusion_reason": {
+      "type": "string",
+      "enum": [
+        "none",
+        "not_a_constraint",
+        "main_task",
+        "not_session_scoped",
+        "intended_external_use",
+        "episodic",
+        "uncertain"
+      ]
+    },
+    "primary_clause_index": {
+      "type": "integer",
+      "minimum": -1
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "gates": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "is_directive": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "uncertain"
+                ]
+              },
+              "not_main_task": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "uncertain"
+                ]
+              },
+              "session_scoped": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "uncertain"
+                ]
+              },
+              "no_external_use": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "uncertain"
+                ]
+              },
+              "generic": {
+                "type": "string",
+                "enum": [
+                  "yes",
+                  "no",
+                  "uncertain"
+                ]
+              }
+            },
+            "required": [
+              "is_directive",
+              "not_main_task",
+              "session_scoped",
+              "no_external_use",
+              "generic"
+            ]
+          },
+          "strict_sc": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "drop",
+              "uncertain"
+            ]
+          },
+          "sc_types": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "enum": [
+                "Action",
+                "Information",
+                "Process",
+                "Preference",
+                "Output"
+              ]
+            }
+          },
+          "observable": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no",
+              "uncertain"
+            ]
+          },
+          "observability_note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "broad_task_constraint": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "drop",
+              "uncertain"
+            ]
+          },
+          "broad_kind": {
+            "type": "string"
+          },
+          "broad_reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "source": {
+                  "type": "string",
+                  "enum": [
+                    "issue_text",
+                    "candidate_paragraph"
+                  ]
+                },
+                "quote": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "source",
+                "quote"
+              ]
+            }
+          }
+        },
+        "required": [
+          "text",
+          "start",
+          "end",
+          "gates",
+          "strict_sc",
+          "sc_types",
+          "observable",
+          "observability_note",
+          "broad_task_constraint",
+          "broad_kind",
+          "broad_reason",
+          "evidence"
+        ]
+      }
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "needs_review": {
+      "type": "boolean"
+    },
+    "review_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "annotation_id",
+    "rubric_version",
+    "primary_task",
+    "candidate_role",
+    "strict_sc",
+    "broad_task_constraint",
+    "strict_exclusion_reason",
+    "primary_clause_index",
+    "clauses",
+    "rationale",
+    "needs_review",
+    "review_reason"
+  ]
+}

@@ -1,0 +1,16 @@
+results_root: /data/compaction_integrity
+output_dir: ${results_root}/analysis/sc_extractor_by_type
+
+sssc_attrs:
+  position: top
+  repeat: 1
+  explicitness: true
+  hard: false
+
+runs:
+  - run_id: wildchat_cat_100k__qwen3_5_9b__llm_gpt_5_4
+    dataset_label: WildChat
+  - run_id: hermes_cat_100k__qwen3_5_9b__llm_gpt_5_4
+    dataset_label: Hermes Agent
+  - run_id: openresearcher_cat_100k__qwen3_5_9b__llm_gpt_5_4
+    dataset_label: OpenResearcher

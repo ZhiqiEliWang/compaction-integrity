@@ -1,0 +1,14 @@
+experiment: "additional"
+# Different-prober MCQ comparison on the gpt-oss-120b (Anthropic) + HermesAgent
+# run. The first entry is the source/reference prober (gpt-oss-120b); the other
+# two are the swapped probers produced by scripts/reprobe_mcq.py. All three share
+# the identical compacted contexts, so compliance differences are attributable to
+# the downstream prober alone.
+reference_run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+runs:
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+    label: gpt-oss-120b (source)
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__qwen30b__llm_gpt_5_4__n50__full__8a850ef1a1
+    label: Qwen3-30B
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gemma_4__llm_gpt_5_4__n50__full__57ed5999a0
+    label: Gemma-4-E4B

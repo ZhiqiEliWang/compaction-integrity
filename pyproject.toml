@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compaction-integrity"
+version = "0.1.0"
+description = "Lost in Compaction: Evaluating Side-Constraint Loss under Context Compaction"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "datasets",
+    "huggingface_hub",
+    "hydra-core",
+    "matplotlib",
+    "nltk",
+    "numpy",
+    "omegaconf",
+    "openai",
+    "pandas",
+    "pyarrow>=22",
+    "requests",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "tqdm",
+    "transformers",
+    "wordcloud",
+]
+
+[project.optional-dependencies]
+# Local-weight serving. Install to run vllm / vllm_serve runtimes.
+vllm = [
+    "torch",
+    "vllm",
+    "openai-harmony",
+]
+# Required only by the LLMLingua-2 compactor baseline.
+llmlingua = [
+    "llmlingua",
+]
+# The COMPINT-Inbox agent-harness replication (src/compaction_integrity/agentic_inbox/). Install agentdojo
+# separately with `pip install --no-deps agentdojo==0.1.35`: its full tree pulls
+# langchain/cohere/google-genai, which risk churning pydantic next to the pinned
+# vllm/transformers. These are the packages it needs at runtime.
+agentic = [
+    "deepdiff",
+    "docstring-parser",
+    "email-validator",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# The annotation package is read at runtime by annotate_sc.py, so it ships with the code.
+[tool.setuptools.package-data]
+"compaction_integrity.dataset.swe_natural_curation" = [
+    "annotation_guidelines/**/*.md",
+    "annotation_guidelines/**/*.json",
+    "annotation_guidelines/**/*.jsonl",
+    "annotation_guidelines/**/*.py",
+    "annotation_guidelines/*.png",
+    "annotation_guidelines/*.pdf",
+]

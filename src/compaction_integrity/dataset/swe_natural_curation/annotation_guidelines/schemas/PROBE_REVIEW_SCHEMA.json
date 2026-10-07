@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["annotation_id", "disposition", "issues", "reason"],
+  "properties": {
+    "annotation_id": {"type": "string", "minLength": 1},
+    "disposition": {"enum": ["ready", "targeted_revision", "substantial_revision", "hold"]},
+    "issues": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "reason": {"type": "string", "minLength": 1}
+  }
+}

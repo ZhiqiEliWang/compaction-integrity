@@ -1,0 +1,37 @@
+# Defaults shared by both Hydra entrypoints.
+inbox_path: data/agentic_inbox/inbox_450.json
+out_dir: /data/compaction_integrity/agentic_inbox_report_runs/paired
+checkpoint_dir: ${out_dir}/shared_before_compaction
+retention_cache: ${out_dir}/retention_cache.json
+seeds: 20
+overwrite: false
+email_format: text
+
+agent:
+  model: openai/gpt-oss-120b
+  provider: vllm
+  kwargs:
+    max_tokens: 4096
+    max_model_len: 131072
+    gpu_memory_utilization: 0.90
+    reasoning_effort: medium
+
+# Compact at the first threshold crossing; stop continuations at the next.
+# 100k counted tokens is approximately 104k rendered prompt tokens.
+session:
+  threshold_tokens: 100000
+  max_turns: 800
+  # Allow a response to one consecutive reminder; tool calls reset the count.
+  max_reminders: 1
+  max_tool_result_tokens: 25000
+  max_context_tokens: 120000
+  max_gen_tokens: 8192
+
+# A compaction transform independent of the session's reminder strategy.
+compactor:
+  name: gpt_oss_120b_pi_mono_prompt
+  model: openai/gpt-oss-120b
+  provider: vllm
+  prompt: pi_mono
+  kwargs:
+    max_tokens: 4096

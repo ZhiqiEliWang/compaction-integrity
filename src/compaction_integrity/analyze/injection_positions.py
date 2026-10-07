@@ -162,7 +162,7 @@ def _abbreviate_row_label(dataset_label: str, compactor_label: str) -> str:
     paren_match = re.search(r"\(([^)]+)\)", compactor_label)
     compactor_base = re.sub(r"\s*\([^)]*\)\s*", "", compactor_label).strip()
     compactor_abbr = (
-        compactor_base.replace("gpt-oss", "GPT")
+        compactor_base.replace("gpt-oss", "oss")
         .replace("qwen3", "QWEN")
         .replace("Llmlingua2 T500", "Lingua")
         .replace("Recent 5", "R5")
@@ -242,7 +242,7 @@ def _plot_all_retention_by_position(
                 ax.axvline(i, color="white", linewidth=2.5)
             group_start = i
         ax.set_xlabel("")
-        ax.set_ylabel("SC Location")
+        ax.set_ylabel("Injection location")
         ax.tick_params(axis="y", rotation=0)
         ax.tick_params(axis="x", labelsize=8)
         plt.setp(ax.get_xticklabels(), rotation=55, ha="right", rotation_mode="anchor")

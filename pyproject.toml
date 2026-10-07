@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "compaction-integrity"
 version = "0.1.0"
-description = "Lost in Compaction: Evaluating Side-Constraint Loss under Context Compaction"
+description = "Lost in Context Compaction: When LLM Systems Drop Side Constraints"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

@@ -1,9 +1,9 @@
-# Lost in Compaction
+# Lost in Context Compaction
 
-**Evaluating Side-Constraint Loss under Context Compaction**
+**When LLM Systems Drop Side Constraints**
 
 <p align="center">
-  <img src="docs/static/fig1-failure-mode.png" width="90%" alt="Three panels from an inbox-cleanup session: the user asks the agent to suggest deletions and adds the side constraint &quot;Don't action until I tell you to&quot;, and the agent only suggests; the compactor's summary drops the constraint; after &quot;Keep going.&quot; the agent calls delete_email and deletes 10 emails.">
+  <img src="docs/static/fig1-failure-mode.png" width="90%" alt="Three panels from an inbox-cleanup session: the user asks the agent to suggest deletions and adds the side constraint &quot;Don't act until I tell you to&quot;, and the agent only suggests; the compactor's summary drops the constraint; after &quot;Please continue working through the rest of my inbox.&quot; the agent calls delete_email and deletes 10 emails.">
 </p>
 
 When the context window fills, LLM agents compact their history to keep working.
@@ -19,7 +19,7 @@ compactor to keep them.
 |---|---|
 | COMPINT: 15 hand-written SCs with forced-choice probes, injected into long WildChat, Hermes Agent and OpenResearcher contexts | [`sssc.py`](src/compaction_integrity/sssc.py), [`scripts/evaluation.py`](src/compaction_integrity/scripts/evaluation.py) |
 | SWE-Natural: SCs already stated in real GitHub issues, and the LLM annotation pipeline that finds them | [`dataset/swe_natural_curation/`](src/compaction_integrity/dataset/swe_natural_curation/) |
-| The SC-aware extractor | [`scripts/eval_sc_extractor.py`](src/compaction_integrity/scripts/eval_sc_extractor.py) |
+| SC-aware extractor | [`scripts/eval_sc_extractor.py`](src/compaction_integrity/scripts/eval_sc_extractor.py) |
 | Agentic inbox: one SC in a live tool-using agent | [`agentic_inbox/`](src/compaction_integrity/agentic_inbox/README.md) |
 
 ## Setup
@@ -71,15 +71,15 @@ and the built dataset to `build --prepend`, so earlier rows keep their position.
 
 | Result | Command |
 |---|---|
-| Table 2: retention and compliance by compactor and dataset | `bash exp_sh/rq1/run_main.sh` |
+| Retention and compliance by compactor and dataset | `bash exp_sh/rq1/run_main.sh` |
 | GPT-5.4-mini at 220k | `bash exp_sh/rq1/run_gpt_5_4_mini.sh` |
 | SWE-Natural | `bash exp_sh/rq1/run_swe_natural_sc_n126.sh` |
-| Figure 4: input length | `bash exp_sh/rq2/run_diff_input_size.sh` |
-| Figure 5: injection position | `bash exp_sh/rq3/run_injection_positions.sh` |
-| Figure 6: SC type | `bash exp_sh/rq3/run_diff_sc_type.sh` |
-| Table 3: strength × explicitness | `bash exp_sh/rq3/run_diff_prefix.sh` |
-| Appendix E: repeating the SC | `bash exp_sh/rq3/run_repeat.sh` |
-| Table 4: the SC-aware extractor | `bash exp_sh/rq4/run_sc_extractor.sh`<br>`bash exp_sh/rq4/run_sc_extractor_swe_natural.sh` |
+| Input length | `bash exp_sh/rq2/run_diff_input_size.sh` |
+| Injection position | `bash exp_sh/rq3/run_injection_positions.sh` |
+| SC type | `bash exp_sh/rq3/run_diff_sc_type.sh` |
+| Strength × explicitness | `bash exp_sh/rq3/run_diff_prefix.sh` |
+| Repeating the SC | `bash exp_sh/rq3/run_repeat.sh` |
+| SC-aware extractor | `bash exp_sh/rq4/run_sc_extractor.sh`<br>`bash exp_sh/rq4/run_sc_extractor_swe_natural.sh` |
 
 Each runner evaluates its configs, then writes tables and figures under
 `/data/compaction_integrity/analysis/` by default. Runs are resume-safe: completed runs are skipped.

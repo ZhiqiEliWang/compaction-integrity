@@ -61,6 +61,7 @@ def run_pairs(cfg: DictConfig, runtime=None) -> dict:
                     runtime=runtime, inbox=inbox.model_copy(deep=True), condition=condition,
                     compactor=None, compactor_name=source["compactor"], seed=source["seed"],
                     sc_text=source["sc_text"], post_compaction_sc=condition == "compacted_post_sc",
+                    continue_reply=settings.continue_reply,
                     threshold_tokens=settings.threshold_tokens,
                     max_context_tokens=settings.max_context_tokens, max_turns=settings.max_turns,
                     max_reminders=settings.max_reminders,

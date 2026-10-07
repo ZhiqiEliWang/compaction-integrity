@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 from matplotlib.colors import to_rgb
-from matplotlib.patches import FancyArrowPatch, Rectangle
+from matplotlib.patches import FancyArrowPatch
 
 from compaction_integrity.viz_config import PALETTE, SLATE_WINE_STOPS, WINE_STOPS
 from diagram_style import CARD_EDGE, CHIP, INK, MONO, PANEL_EDGE, STONE, TAUPE, Canvas
@@ -27,13 +27,14 @@ LS = 1.3
 INSET, PAD = 12, 14  # panel edge -> card, card edge -> text
 GAP = 22  # between stacked cards
 
-W = 1660
+W = 1680
 c = Canvas(W, 2000)
 fig, ax = c.fig, c.ax
 box, text = c.box, c.text
 
-# A is wider so its prose breaks at phrase boundaries; B/C just fit the summary
-PANELS = [(8, 592), (602, 1122), (1132, 1652)]
+# A is wider so its prose breaks at phrase boundaries; B just fits the summary; C fits the
+# continue prompt on two lines
+PANELS = [(8, 592), (602, 1122), (1132, 1672)]
 TOP = 8
 TITLE_Y = (TOP + 62, TOP + 62 + TITLE * 1.12)
 HEAD_Y = TITLE_Y[1] + 26  # below the panel titles
@@ -121,9 +122,12 @@ chip_bot = code(L + PAD + 14, top + PAD + 12, "<tool>list_emails(\n  offset=300)
 box(L + PAD, top + PAD, R - PAD, chip_bot, fc=CHIP, ec=CARD_EDGE, r=8, z=2)
 y = lines(L + PAD, chip_bot + 8,
           ["Suggested deletions:", "#203 newsletter, #179 promo,", "#150 expired alert, …"])
-box(L, top, R, y + PAD)
-a_bot = y + PAD
-end_cards = []  # C's last card reaches the shared bottom line
+chip_top = y + 10
+chip_bot = code(L + PAD + 14, chip_top + 12, "<tool>list_emails(\n  offset=325)</tool>") + 12
+box(L + PAD, chip_top, R - PAD, chip_bot, fc=CHIP, ec=CARD_EDGE, r=8, z=2)
+a_fade = chip_bot + 12  # the turn runs on into B: fade out from the last line's top
+y = lines(L + PAD, chip_bot + 8, ["#147 promo, #144 newsletter,"])
+end_cards = [(L, top, R)]  # A's and C's last cards reach the shared bottom line
 bottoms.append(y + PAD)
 
 # C. constraint violation
@@ -139,17 +143,18 @@ y = code(L + PAD, top + PAD, SUMMARY)
 box(L, top, R, y + PAD, fc="none", ec=TAUPE, lw=2, ls=(0, (6, 4)), r=12)
 
 top = headed(R, y + PAD + GAP, "User", ha="right")
-y = prose(L + PAD, top + PAD, R - L - 2 * PAD, [("Keep going.", {})])
+y = prose(L + PAD, top + PAD, R - L - 2 * PAD,
+          [("Please continue working through the rest of my inbox.", {})])
 box(L, top, R, y + PAD)
 
 top = headed(L + 4, y + PAD + GAP, "Agent")
-chip_top = top + TAG * 0.8 + 6
+tag(R - PAD, top - 14 - ROLE * 0.36, "SC violated", OXBLOOD, ha="right")  # beside the role
+chip_top = top + PAD
 chip_bot = code(L + PAD + 14, chip_top + 12, '<tool>delete_email(\n  id="455")</tool>\n'
                 '<tool>delete_email(\n  id="457")</tool> …') + 12
 box(L + PAD, chip_top, R - PAD, chip_bot, fc=CHIP, ec=CARD_EDGE, r=8, z=2)
 y = prose(L + PAD, chip_bot + 12, R - L - 2 * PAD, [("Deleted 10 emails.", {})])
 end_cards.append((L, top, R))
-tag(R - PAD, top, "SC violated", OXBLOOD, ha="right")
 bottoms.append(y + PAD)
 
 # B. compaction
@@ -157,7 +162,7 @@ bottoms.append(y + PAD)
 # dropped SC, summary. The compactor -> summary arrow takes the slack.
 bx_c = sum(PANELS[1]) / 2
 L, R = card_x(1)
-text(bx_c, sum(TITLE_Y) / 2, "B. Compaction", size=TITLE, weight="bold", ha="center")
+text(bx_c, TITLE_Y[0], "B. Context\nCompaction", size=TITLE, weight="bold", ha="center", ls=1.12)
 top = headed(L + 4, HEAD_Y, "Agent")
 y = prose(L + PAD, top + PAD, R - L - 2 * PAD, [("…#142 promo, #131 sale.", {})])
 chip_top = y + 10
@@ -175,8 +180,9 @@ box(bx_c - w / 2 - 8, y + 38 - NOTE * 0.65, bx_c + w / 2 + 8, y + 38 + NOTE * 0.
 text(bx_c, y + 38, note, size=NOTE, color=TAUPE, style="italic", ha="center",
      va="center_baseline")
 y += 82
-box(bx_c - 150, y, bx_c + 150, y + 70, fc=SLATE_PALE, ec=SLATE, lw=2.8, r=14, z=3)
-text(bx_c, y + 35, "Compactor", size=40, color=SLATE_DARK, weight="bold", ha="center",
+w = c.measure("Context Compactor", 40, "bold") / 2 + 40
+box(bx_c - w, y, bx_c + w, y + 70, fc=SLATE_PALE, ec=SLATE, lw=2.8, r=14, z=3)
+text(bx_c, y + 35, "Context Compactor", size=40, color=SLATE_DARK, weight="bold", ha="center",
      va="center_baseline")
 comp_bot = y + 70
 
@@ -185,10 +191,8 @@ sum_h = 2 * PAD + code_h(SUMMARY)
 bot = max(bottoms + [comp_bot + 40 + sum_h + GAP + TAG * 0.5 + sc_h])
 for x0, t, x1 in end_cards:
     box(x0, t, x1, bot)
-mid = (a_bot + bot) / 2  # A's conversation runs on into B
-for k in (-1, 0, 1):
-    ax.add_patch(Rectangle((sum(PANELS[0]) / 2 - 6, mid + 32 * k - 6), 12, 12, color=TAUPE,
-                           alpha=0.6, zorder=3))
+x0, _, x1 = end_cards[0]
+fade(x0 - 6, bot + 4, x1 + 6, a_fade)
 
 top = bot - sc_h
 prose(bx_c, top + PAD + TAG * 0.8, R - L - 2 * PAD,

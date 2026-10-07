@@ -23,7 +23,7 @@ def main(cfg: DictConfig) -> None:
     inbox_raw = Path(cfg.inbox_path).read_text()
     settings = cfg.session
     runtime = compactor = None
-    print(f"SC: {SC_REPORT_TEXT}; threshold={settings.threshold_tokens}; max_reminders={settings.max_reminders}", flush=True)
+    print(f"SC: {SC_REPORT_TEXT}; continue_reply={settings.continue_reply!r}; threshold={settings.threshold_tokens}; max_reminders={settings.max_reminders}", flush=True)
 
     for seed in range(cfg.seeds):
         checkpoint_path = Path(cfg.checkpoint_dir) / f"seed{seed}.json"
@@ -38,7 +38,8 @@ def main(cfg: DictConfig) -> None:
                 runtime=runtime, inbox=TriageInbox.model_validate_json(inbox_raw),
                 condition="before_compaction", compactor=compactor,
                 compactor_name=cfg.compactor.name, seed=seed, sc_text=SC_REPORT_TEXT,
-                post_compaction_sc=False, threshold_tokens=settings.threshold_tokens,
+                post_compaction_sc=False, continue_reply=settings.continue_reply,
+                threshold_tokens=settings.threshold_tokens,
                 max_context_tokens=settings.max_context_tokens, max_turns=settings.max_turns,
                 max_reminders=settings.max_reminders,
                 max_tool_result_tokens=settings.max_tool_result_tokens,

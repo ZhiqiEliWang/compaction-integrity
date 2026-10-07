@@ -20,6 +20,8 @@ import pandas as pd
 from scipy.stats import binomtest
 import yaml
 
+from compaction_integrity.viz_config import PALETTE
+
 
 GENERATIVE_RUN_ID = (
     "hermes_cat_100k__gpt_oss_120b_anthropic_prompt__"
@@ -263,12 +265,13 @@ def plot_case_rates(case_summary: pd.DataFrame, out_path: Path) -> None:
     x = np.arange(len(ordered))
     width = 0.36
     fig, ax = plt.subplots(figsize=(7.4, 3.5))
-    ax.bar(x - width / 2, summary["mcq_rate_all"], width, label="MCQ")
+    ax.bar(x - width / 2, summary["mcq_rate_all"], width, label="MCQ", color=PALETTE[0])
     ax.bar(
         x + width / 2,
         summary["generative_rate_decisive"],
         width,
         label="Free generation",
+        color=PALETTE[1],
     )
     ax.errorbar(
         x + width / 2,
@@ -293,6 +296,49 @@ def plot_case_rates(case_summary: pd.DataFrame, out_path: Path) -> None:
 
 def _pct(value: float) -> str:
     return f"{100 * value:.1f}%"
+
+
+def _effective_retention(rates: pd.Series) -> float:
+    """(K_comp - K_lctx) / (K_ub - K_lctx), as ``effective_retention`` in main_exp.py."""
+    denom = rates["compacted_post_sssc"] - rates["full_without_sssc"]
+    if denom == 0:
+        return float("nan")
+    return (rates["compacted"] - rates["full_without_sssc"]) / denom
+
+
+def build_latex_table(case_summary: pd.DataFrame) -> tuple[pd.DataFrame, str]:
+    """Compliance per condition and ER; free generation excludes NEI rows."""
+    summary = case_summary.set_index("case")
+    table = pd.DataFrame({
+        "MCQ": summary["mcq_rate_all"],
+        "Free generation": summary["generative_rate_decisive"],
+    }).T[["full_without_sssc", "full_with_sssc", "compacted", "compacted_post_sssc"]]
+    table["effective_retention"] = table.apply(_effective_retention, axis=1)
+
+    def cell(value: float) -> str:
+        return rf"\({100 * value:.1f}\%\)"
+
+    body = "\n".join(
+        f"{setup} & " + " & ".join(cell(v) for v in row) + r" \\"
+        for setup, row in table.iterrows()
+    )
+    latex = rf"""\begin{{table*}}[t]
+\centering
+\small
+\setlength{{\tabcolsep}}{{5pt}}
+\renewcommand{{\arraystretch}}{{1.1}}
+\begin{{tabular}}{{lccccc}}
+\toprule
+\shortstack{{Evaluation\\setup}} & \shortstack{{\(K_{{\mathrm{{lctx}}}}\)\\Full context\\without SC}} & \shortstack{{\(K_{{\mathrm{{lctx\_sc}}}}\)\\Full context\\with SC}} & \shortstack{{\(K_{{\mathrm{{comp}}}}\)\\Compacted\\context}} & \shortstack{{\(K_{{\mathrm{{ub}}}}\)\\SC appended after\\compaction}} & \shortstack{{ER\\Effective\\retention}} \\
+\midrule
+{body}
+\bottomrule
+\end{{tabular}}
+\caption{{Compliance under the controlled MCQ evaluation and the tool-using free-generation evaluation on the same six-SC subset. Free-generation scores exclude samples the judge labeled not enough information (NEI). Effective retention is \(\mathrm{{ER}} = (K_{{\mathrm{{comp}}}} - K_{{\mathrm{{lctx}}}}) / (K_{{\mathrm{{ub}}}} - K_{{\mathrm{{lctx}}}})\).}}
+\label{{tab:agent-harness-compliance}}
+\end{{table*}}
+"""
+    return table, latex
 
 
 def write_report(
@@ -408,29 +454,6 @@ a multi-step trajectory. It also uses GPT-OSS-120B as the only free-generation
 model; Qwen and Gemma vary only the MCQ prober. A precise paper claim is therefore
 "free-generation structured action proxy with cross-model MCQ sensitivity,"
 not "evaluation in multiple executable agent harnesses."
-
-## Suggested reviewer response
-
-We agree that binary MCQ compliance is an indirect proxy and have narrowed the
-claim accordingly. We added a free-generation evaluation for six constraints
-whose compliance is observable through structured tool-use behavior. GPT-OSS
-was given native tool schemas, and an independent judge evaluated the complete
-generated transcript, including attempted tool calls. Across 300 compacted
-examples, the judge was decisive on {_pct(compacted.generative_decisive_rate)};
-generative compliance was {_pct(compacted.generative_rate_decisive)}, compared
-with {_pct(compacted.mcq_rate_decisive_rows)} for MCQ, with only
-{_pct(compacted.agreement)} row-level agreement (kappa
-{compacted.cohen_kappa:.3f}). The near-ceiling post-constraint condition
-({_pct(upper.generative_rate_decisive)}) indicates that the action probes can
-detect compliance when the constraint is explicitly available. We also compare
-MCQ results across GPT-OSS-120B, Qwen3-30B, and Gemma-4-E4B while holding
-contexts fixed; the estimated compaction effect changes materially across
-probers. We therefore report the generative analysis as a behavioral
-sensitivity check, explicitly acknowledge compactor-to-prober compatibility,
-and avoid treating MCQ compliance as model-independent semantic preservation.
-Our setup records structured action selection but does not execute tools or
-continue after tool results, so we do not describe it as a full executable agent
-harness.
 """
     out_path.write_text(report, encoding="utf-8")
 
@@ -484,6 +507,9 @@ def main() -> None:
     contrasts.to_csv(args.out_dir / "paired_condition_contrasts.csv", index=False)
     tool_summary.to_csv(args.out_dir / "tool_call_summary.csv", index=False)
     retention.to_csv(args.out_dir / "retention_relationship.csv", index=False)
+    compliance_table, latex = build_latex_table(case_summary)
+    compliance_table.to_csv(args.out_dir / "compliance_er_table.csv")
+    (args.out_dir / "compliance_er_table.tex").write_text(latex, encoding="utf-8")
     plot_case_rates(case_summary, args.out_dir / "case_rates.pdf")
     write_report(
         args.out_dir / "report.md",
@@ -495,6 +521,7 @@ def main() -> None:
     )
 
     print(case_summary.to_string(index=False))
+    print(f"\n{compliance_table.to_string()}")
     print(f"\nAnalysis saved to {args.out_dir}")
 
 

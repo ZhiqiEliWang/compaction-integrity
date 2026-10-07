@@ -11,16 +11,21 @@ For each (dataset_row, sssc) pair, computes:
 Compliance is graded by exact A/B letter match against a forced-choice probe
 (no LLM judge). Retention is LLM-judged and only computed for case 3.
 
+Two dataset shapes feed this. On the stitched datasets each row is crossed with
+all 15 `SSSCS` and the SSSC is injected into case 1/3/4, leaving the raw context
+as case 2. On a natural-SC dataset (COMPINT-SWE-Natural) the row carries its own
+single SC, already present in the history: case 1/3/4 use the trace as-is, and
+case 2 uses the ablated arm shipped in `messages_without_sc`. Set
+`explicitness: false` and `hard: false` for those runs so case 4 re-presents the
+issue-author sentence verbatim instead of wrapping it in session framing.
+
 Cases 1 & 2 are compactor-independent and cached at:
     {results_root}/_full_probe_cache[/_test]/<shared_id>.pkl
 
 Cases 3 & 4 are compactor-dependent. Wide per-compactor results live at:
     {results_root}/runs[_test]/<run_id>/evaluation_results.pkl
 
-================================================================================
-Schema of the wide per-compactor result file (`evaluation_results.pkl`)
-================================================================================
-The pickle contains a pandas DataFrame with one row per
+Schema of `evaluation_results.pkl`: a pandas DataFrame with one row per
 (dataset_row, sssc, compactor, evaluator, probe) tuple. Columns:
 
 Identity / configuration (constant within a run):
@@ -87,9 +92,9 @@ Case 4 — compacted_post_sssc (re-present SSSC as a user turn after compaction)
   compacted_post_sssc_output          Raw model text. None if compaction failed.
   compacted_post_sssc_compliant       True/False/None (same grading rule).
 
-Notes on resume:
-  * If the wide pickle already has cases 1-3 but not case 4 (older runs),
-    re-running fills in the case-4 columns in place; rows are not duplicated.
+Resume:
+  * Rows that have cases 1-3 but not case 4 get the case-4 columns filled in
+    place on re-run; rows are not duplicated.
   * Rows where compaction failed (`compacted_context is None`) skip both
     case-3 and case-4 probes; their probe/output/compliant fields stay None.
 """
@@ -124,7 +129,7 @@ from compaction_integrity.runtime.env import apply_runtime_environment
 from compaction_integrity.runtime.openai_runtime import OpenAIRuntime
 from compaction_integrity.runtime.vllm_runtime import VLLMRuntime
 from compaction_integrity.runtime.vllm_serve_runtime import VLLMServeRuntime
-from compaction_integrity.scripts.eval_run_layout import (
+from compaction_integrity.eval_run_layout import (
     build_run_id,
     build_run_spec,
     normalize_compactors_container,
@@ -139,10 +144,6 @@ from compaction_integrity.sssc import SSSCS, sssc_to_prompt, probe_to_user_promp
 
 
 Message = dict[str, str]
-
-# ---------------------------------------------------------------------------
-# Result schemas
-# ---------------------------------------------------------------------------
 
 # Phase-1 (compactor-independent) shared cache.
 # Keyed by (dataset, source_row_index, sssc_id, sssc_attrs, probe).
@@ -169,7 +170,7 @@ _FULL_PROBE_COLUMNS = [
     "full_without_sssc_compliant",
 ]
 
-# Phase-2 (per-compactor) wide file. Includes phase-1 columns plus case-3 columns.
+# Phase-2 (per-compactor) wide file: phase-1 columns plus cases 3 and 4.
 _EVAL_WIDE_COLUMNS = _FULL_PROBE_COLUMNS + [
     "compactor",
     "evaluator",
@@ -186,10 +187,6 @@ _EVAL_WIDE_COLUMNS = _FULL_PROBE_COLUMNS + [
     "compacted_post_sssc_compliant",
 ]
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _flatten_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     flattened: dict[str, Any] = {}
@@ -220,9 +217,9 @@ def _persist_dataframe(
     return df
 
 
-# OpenAI per-model enqueued-prompt-token cap budget for a single batch file. We
-# aim below the documented 40M cap (e.g. gpt-5.4-mini) to leave headroom for
-# concurrent batches in the same org.
+# Enqueued-prompt-token budget for one OpenAI batch file: below the documented
+# 40M per-model cap (e.g. gpt-5.4-mini) to leave headroom for concurrent batches
+# in the same org.
 _OPENAI_BATCH_TOKEN_BUDGET = 30_000_000
 
 
@@ -260,10 +257,6 @@ def _batched_indices(total_size: int, batch_size: int) -> list[tuple[int, int]]:
         for start in range(0, total_size, batch_size)
     ]
 
-
-# ---------------------------------------------------------------------------
-# Compactor helpers (inlined from run_compaction.py)
-# ---------------------------------------------------------------------------
 
 def _build_compactor(compactor_name: str, compactor_cfg: dict[str, Any] | None) -> Compactor:
     cfg = compactor_cfg or {}
@@ -343,10 +336,6 @@ def _compact_single_with_retry(
     ) from last_exc
 
 
-# ---------------------------------------------------------------------------
-# Probing runtime helpers (inlined from run_probing.py)
-# ---------------------------------------------------------------------------
-
 def _retrieve_sys_prompt(dataset_name: str, model_name: str) -> str:
     if dataset_name.startswith("wildchat"):
         resolved_model_name = model_name.removeprefix("vllm/")
@@ -421,18 +410,14 @@ def _parse_retention_output(output_text: str) -> bool:
     raise ValueError(f"Retention judge must return YES or NO, got: {output_text!r}")
 
 
-# ---------------------------------------------------------------------------
-# SSSC injection + probe message
-# ---------------------------------------------------------------------------
-
 def _inject_sssc(
     messages: list[Message],
     sssc_text: str,
     sssc_attrs: dict[str, Any],
     inject_rng: random.Random,
 ) -> list[Message]:
-    """Return a new messages list with the SSSC text prepended to one or more
-    user turns. Wraps the SSSC via sssc_to_prompt(...) before injection.
+    """Return a new messages list with the SSSC, wrapped by sssc_to_prompt(...),
+    prepended to one or more user turns.
 
     repeat == 1 -> single injection at the configured `position`.
     repeat > 1  -> N random user turns picked via inject_rng (position ignored).
@@ -477,10 +462,6 @@ def _grade_letter(text: str, compliant_letter: str) -> bool | None:
     return cleaned == compliant_letter
 
 
-# ---------------------------------------------------------------------------
-# Row keys
-# ---------------------------------------------------------------------------
-
 def _full_probe_row_key(row: dict[str, Any]) -> str:
     return "|".join(
         [
@@ -507,9 +488,7 @@ def _wide_row_key(row: dict[str, Any]) -> str:
     )
 
 
-# ---------------------------------------------------------------------------
-# Phase 1: compactor-independent full-context probes (cases 1 & 2)
-# ---------------------------------------------------------------------------
+# Phase 1: compactor-independent full-context probes (cases 1 & 2).
 
 @dataclass(frozen=True)
 class _PairKey:
@@ -517,21 +496,94 @@ class _PairKey:
     sssc_id: int
 
 
-def _compute_pair_swap_seeds(
+@dataclass(frozen=True)
+class _Pair:
+    """One (context, SSSC) unit of work, with both arms of its context.
+
+    `with_messages` carries the SSSC, `without_messages` does not. For the
+    stitched datasets the SSSC is injected into the former; for natural-SC
+    datasets the SSSC is already in the history and the latter is the ablated
+    arm shipped with the dataset.
+    """
+
+    row: EvalDatasetRow
+    sssc: dict[str, Any]
+    with_messages: list[Message]
+    without_messages: list[Message]
+    system_prompt: str
+
+    @property
+    def key(self) -> _PairKey:
+        return _PairKey(self.row.source_row_index, int(self.sssc["id"]))
+
+
+def _build_pairs(
     rows: list[EvalDatasetRow],
-    ssscs: list[dict[str, Any]],
+    sssc_attrs: dict[str, Any],
+    dataset_system_prompt: str | None,
+    global_seed: int,
+) -> list[_Pair]:
+    """Expand rows into work units once, so phases 1 and 2 share identical
+    contexts instead of re-deriving them from the same seed."""
+    inject_rng = random.Random(global_seed)
+    pairs: list[_Pair] = []
+    for row in rows:
+        ssscs = [row.sssc] if row.sssc is not None else SSSCS
+        for sssc in ssscs:
+            if row.sssc is not None:
+                with_messages = list(row.messages)
+                without_messages = list(row.messages_without_sssc)
+            else:
+                with_messages = _inject_sssc(
+                    list(row.messages),
+                    sssc_text=str(sssc["sssc"]),
+                    sssc_attrs=sssc_attrs,
+                    inject_rng=inject_rng,
+                )
+                without_messages = list(row.messages)
+            pairs.append(
+                _Pair(
+                    row=row,
+                    sssc=sssc,
+                    with_messages=with_messages,
+                    without_messages=without_messages,
+                    system_prompt=str(row.system_prompt or dataset_system_prompt),
+                )
+            )
+    return pairs
+
+
+def _resolve_sssc_attrs(
+    sssc_attrs: dict[str, Any],
+    natural_sc: bool,
+    dataset_name: str,
+) -> dict[str, Any]:
+    """Natural-SC datasets have no injection to configure: the SC sits where the
+    issue author wrote it, and case 4 re-presents that sentence verbatim. A
+    non-false `explicitness`/`hard` would wrap it in session framing the author
+    never used, so it is refused and degraded rather than silently honoured."""
+    attrs = dict(sssc_attrs)
+    if not natural_sc or not (attrs["explicitness"] or attrs["hard"]):
+        return attrs
+    print(
+        f"[{dataset_name}] explicitness={attrs['explicitness']} hard={attrs['hard']} "
+        "is not supported on a natural-SC dataset; degrading both to False so the "
+        "SC is re-presented verbatim."
+    )
+    attrs["explicitness"] = False
+    attrs["hard"] = False
+    return attrs
+
+
+def _compute_pair_swap_seeds(
+    pairs: list[_Pair],
     global_seed: int,
 ) -> dict[_PairKey, int]:
     """Pre-compute a swap seed per (row, sssc) pair, deterministic given
-    global_seed and pair iteration order. Used identically for cases 1, 2, 3
-    so the A/B order matches across cases."""
+    global_seed and pair iteration order. Shared by cases 1-4 so the A/B order
+    matches across cases."""
     rng = random.Random(global_seed)
-    seeds: dict[_PairKey, int] = {}
-    for row in rows:
-        for sssc in ssscs:
-            key = _PairKey(row.source_row_index, int(sssc["id"]))
-            seeds[key] = rng.randint(0, 2**31 - 1)
-    return seeds
+    return {pair.key: rng.randint(0, 2**31 - 1) for pair in pairs}
 
 
 def _build_full_probe_metadata(
@@ -566,8 +618,7 @@ def _build_retention_only_full_probe_df(
     *,
     dataset_name: str,
     dataset_path: str,
-    rows: list[EvalDatasetRow],
-    ssscs: list[dict[str, Any]],
+    pairs: list[_Pair],
     sssc_attrs: dict[str, Any],
     swap_seeds: dict[_PairKey, int],
     flattened_probe_cfg: dict[str, Any],
@@ -575,29 +626,27 @@ def _build_retention_only_full_probe_df(
     """Phase-1 substitute for retention-only mode: emits the identity columns
     needed by phase 2, with all probe-output fields left as None."""
     out_rows: list[dict[str, Any]] = []
-    for row in rows:
-        for sssc in ssscs:
-            pair_key = _PairKey(row.source_row_index, int(sssc["id"]))
-            swap_seed = swap_seeds[pair_key]
-            _, compliant_letter = probe_to_user_prompt(
-                probe=str(sssc["probe"]),
-                correct_answer=str(sssc["correct_answer"]),
-                incorrect_answer=str(sssc["incorrect_answer"]),
-                seed=swap_seed,
-            )
-            meta = _build_full_probe_metadata(
-                dataset_name=dataset_name,
-                dataset_path=dataset_path,
-                row=row,
-                sssc=sssc,
-                sssc_attrs=sssc_attrs,
-                flattened_probe_cfg=flattened_probe_cfg,
-                swap_seed=swap_seed,
-                compliant_letter=compliant_letter,
-            )
-            full = {col: None for col in _FULL_PROBE_COLUMNS}
-            full.update(meta)
-            out_rows.append(full)
+    for pair in pairs:
+        swap_seed = swap_seeds[pair.key]
+        _, compliant_letter = probe_to_user_prompt(
+            probe=str(pair.sssc["probe"]),
+            correct_answer=str(pair.sssc["correct_answer"]),
+            incorrect_answer=str(pair.sssc["incorrect_answer"]),
+            seed=swap_seed,
+        )
+        meta = _build_full_probe_metadata(
+            dataset_name=dataset_name,
+            dataset_path=dataset_path,
+            row=pair.row,
+            sssc=pair.sssc,
+            sssc_attrs=sssc_attrs,
+            flattened_probe_cfg=flattened_probe_cfg,
+            swap_seed=swap_seed,
+            compliant_letter=compliant_letter,
+        )
+        full = {col: None for col in _FULL_PROBE_COLUMNS}
+        full.update(meta)
+        out_rows.append(full)
     return pd.DataFrame(out_rows, columns=_FULL_PROBE_COLUMNS)
 
 
@@ -605,23 +654,20 @@ def _ensure_full_probes(
     *,
     dataset_name: str,
     dataset_path: str,
-    rows: list[EvalDatasetRow],
-    ssscs: list[dict[str, Any]],
+    pairs: list[_Pair],
     sssc_attrs: dict[str, Any],
     swap_seeds: dict[_PairKey, int],
     flattened_probe_cfg: dict[str, Any],
     probe_kwargs: dict[str, Any],
     if_model: str,
     provider: str,
-    system_prompt: str,
-    global_seed: int,
     save_path: Path,
     overwrite: bool,
 ) -> pd.DataFrame:
-    """Compute (or resume) cases 1 + 2 for every (row, sssc) pair and persist
-    incrementally to `save_path`. Returns the full dataframe at the end.
+    """Compute (or resume) cases 1 + 2 for every (row, sssc) pair, persisting
+    incrementally to `save_path`, and return the full dataframe.
 
-    Resume semantics: each case resumes independently. A (row, sssc) pair
+    Resume: each case resumes independently. A (row, sssc) pair
     skips `full_with_sssc` or `full_without_sssc` when that case's compliance
     column has already been written."""
     if overwrite and save_path.exists():
@@ -637,51 +683,46 @@ def _ensure_full_probes(
             f"resuming with {len(existing_by_key)} existing row(s)."
         )
 
-    # Build the full work list and inject SSSCs (deterministic across phases
-    # because inject_rng is seeded on global_seed and advances in fixed order).
-    inject_rng = random.Random(global_seed)
+    # Build the full work list from the pre-expanded pairs, so both arms of a
+    # context stay exactly as phase 2 will see them.
     pending_with_metas: list[dict[str, Any]] = []
     pending_with_contexts: list[list[Message]] = []
     pending_with_prompts: list[str] = []
+    pending_with_systems: list[str] = []
     pending_without_metas: list[dict[str, Any]] = []
     pending_without_contexts: list[list[Message]] = []
     pending_without_prompts: list[str] = []
+    pending_without_systems: list[str] = []
 
-    for row in rows:
-        for sssc in ssscs:
-            pair_key = _PairKey(row.source_row_index, int(sssc["id"]))
-            swap_seed = swap_seeds[pair_key]
-            probe_prompt, compliant_letter = probe_to_user_prompt(
-                probe=str(sssc["probe"]),
-                correct_answer=str(sssc["correct_answer"]),
-                incorrect_answer=str(sssc["incorrect_answer"]),
-                seed=swap_seed,
-            )
-            metadata = _build_full_probe_metadata(
-                dataset_name=dataset_name,
-                dataset_path=dataset_path,
-                row=row,
-                sssc=sssc,
-                sssc_attrs=sssc_attrs,
-                flattened_probe_cfg=flattened_probe_cfg,
-                swap_seed=swap_seed,
-                compliant_letter=compliant_letter,
-            )
-            injected_messages = _inject_sssc(
-                list(row.messages),
-                sssc_text=str(sssc["sssc"]),
-                sssc_attrs=sssc_attrs,
-                inject_rng=inject_rng,
-            )
-            existing = existing_by_key.get(_full_probe_row_key(metadata))
-            if existing is None or existing.get("full_with_sssc_compliant") is None:
-                pending_with_metas.append(metadata)
-                pending_with_contexts.append(injected_messages)
-                pending_with_prompts.append(probe_prompt)
-            if existing is None or existing.get("full_without_sssc_compliant") is None:
-                pending_without_metas.append(metadata)
-                pending_without_contexts.append(list(row.messages))
-                pending_without_prompts.append(probe_prompt)
+    for pair in pairs:
+        swap_seed = swap_seeds[pair.key]
+        probe_prompt, compliant_letter = probe_to_user_prompt(
+            probe=str(pair.sssc["probe"]),
+            correct_answer=str(pair.sssc["correct_answer"]),
+            incorrect_answer=str(pair.sssc["incorrect_answer"]),
+            seed=swap_seed,
+        )
+        metadata = _build_full_probe_metadata(
+            dataset_name=dataset_name,
+            dataset_path=dataset_path,
+            row=pair.row,
+            sssc=pair.sssc,
+            sssc_attrs=sssc_attrs,
+            flattened_probe_cfg=flattened_probe_cfg,
+            swap_seed=swap_seed,
+            compliant_letter=compliant_letter,
+        )
+        existing = existing_by_key.get(_full_probe_row_key(metadata))
+        if existing is None or existing.get("full_with_sssc_compliant") is None:
+            pending_with_metas.append(metadata)
+            pending_with_contexts.append(pair.with_messages)
+            pending_with_prompts.append(probe_prompt)
+            pending_with_systems.append(pair.system_prompt)
+        if existing is None or existing.get("full_without_sssc_compliant") is None:
+            pending_without_metas.append(metadata)
+            pending_without_contexts.append(pair.without_messages)
+            pending_without_prompts.append(probe_prompt)
+            pending_without_systems.append(pair.system_prompt)
 
     if not pending_with_metas and not pending_without_metas:
         print(f"Full-probe cache already complete: {save_path}")
@@ -708,6 +749,7 @@ def _ensure_full_probes(
             pending_metas,
             contexts,
             prompts,
+            systems,
             prompt_col,
             text_col,
             compliant_col,
@@ -718,6 +760,7 @@ def _ensure_full_probes(
                 pending_with_metas,
                 pending_with_contexts,
                 pending_with_prompts,
+                pending_with_systems,
                 "full_with_sssc_probe_prompt",
                 "full_with_sssc_output",
                 "full_with_sssc_compliant",
@@ -728,6 +771,7 @@ def _ensure_full_probes(
                 pending_without_metas,
                 pending_without_contexts,
                 pending_without_prompts,
+                pending_without_systems,
                 "full_without_sssc_probe_prompt",
                 "full_without_sssc_output",
                 "full_without_sssc_compliant",
@@ -747,14 +791,17 @@ def _ensure_full_probes(
                     batch_metas = pending_metas[start:end]
                     batch_prompts = prompts[start:end]
                     batch_contexts = contexts[start:end]
+                    batch_systems = systems[start:end]
                     batch_convos = [
                         [
-                            {"role": "system", "content": system_prompt},
+                            {"role": "system", "content": system_msg},
                             get_sssc_evaluation_tool_message(),
                             *ctx,
                             {"role": "user", "content": probe_msg},
                         ]
-                        for ctx, probe_msg in zip(batch_contexts, batch_prompts)
+                        for ctx, probe_msg, system_msg in zip(
+                            batch_contexts, batch_prompts, batch_systems
+                        )
                     ]
                     outputs = probe_runtime.batch_generate(batch_convos)
                     for meta, probe_msg, ctx_msgs, response in zip(
@@ -796,9 +843,7 @@ def _ensure_full_probes(
     return final_df
 
 
-# ---------------------------------------------------------------------------
-# Phase 2: per-compactor compacted-context probe (case 3) + retention
-# ---------------------------------------------------------------------------
+# Phase 2: per-compactor compaction, compacted-context probes (cases 3 & 4), retention.
 
 def _compact_one_with_recovery(
     *,
@@ -808,8 +853,8 @@ def _compact_one_with_recovery(
     max_attempts: int,
     retry_sleep_seconds: float,
 ) -> tuple[list[Message] | None, str, str | None]:
-    """Returns (compacted_messages, status, error). On failure after retries,
-    records error rather than re-raising."""
+    """Return (compacted_messages, status, error); a failure after retries is
+    recorded, not raised."""
     try:
         result = _compact_single_with_retry(
             compactor=compactor,
@@ -915,10 +960,7 @@ def _judge_retention_batch(
 def _run_compacted_phase(
     *,
     dataset_name: str,
-    rows: list[EvalDatasetRow],
-    ssscs: list[dict[str, Any]],
-    sssc_attrs: dict[str, Any],
-    swap_seeds: dict[_PairKey, int],
+    pairs: list[_Pair],
     full_probe_df: pd.DataFrame,
     compactor_name: str,
     compactor_cfg: dict[str, Any] | None,
@@ -929,8 +971,6 @@ def _run_compacted_phase(
     probe_kwargs: dict[str, Any],
     if_model: str,
     provider: str,
-    system_prompt: str,
-    global_seed: int,
     save_path: Path,
     overwrite: bool,
 ) -> None:
@@ -952,41 +992,34 @@ def _run_compacted_phase(
         for r in full_probe_df.to_dict(orient="records")
     }
 
-    # Categorize work:
-    #   pending_full: row missing entirely → run compaction + phase-3 + phase-4.
-    #   pending_post: row exists, phase-3 done, phase-4 missing, compaction
-    #                 succeeded (compacted_context not None) → phase-4 backfill.
+    # pending_full: row missing -> compaction + cases 3 and 4.
+    # pending_post: row exists, case 4 missing, compaction succeeded
+    #               (compacted_context not None) -> case-4 backfill.
     pending_full_metas: list[dict[str, Any]] = []
     pending_full_injected: list[list[Message]] = []
     pending_post_keys: list[str] = []
 
-    # Same global_seed → same injection points as phase 1.
-    inject_rng = random.Random(global_seed)
-    for row in rows:
-        for sssc in ssscs:
-            pair_key = _PairKey(row.source_row_index, int(sssc["id"]))
-            full_row = full_by_pair[pair_key]
-            wide_meta: dict[str, Any] = {
-                **full_row,
-                "compactor": flattened_compactor_cfg,
-                "evaluator": flattened_evaluator_cfg,
-            }
-            injected = _inject_sssc(
-                list(row.messages),
-                sssc_text=str(sssc["sssc"]),
-                sssc_attrs=sssc_attrs,
-                inject_rng=inject_rng,
-            )
-            key = _wide_row_key(wide_meta)
-            existing = working.get(key)
-            if existing is None:
-                pending_full_metas.append(wide_meta)
-                pending_full_injected.append(injected)
-            elif (
-                existing.get("compacted_post_sssc_compliant") is None
-                and existing.get("compacted_context") is not None
-            ):
-                pending_post_keys.append(key)
+    # The system prompt travels with the pair, not the run: agent traces carry
+    # their own, while the stitched datasets share one per dataset.
+    system_by_pair: dict[_PairKey, str] = {p.key: p.system_prompt for p in pairs}
+
+    for pair in pairs:
+        full_row = full_by_pair[pair.key]
+        wide_meta: dict[str, Any] = {
+            **full_row,
+            "compactor": flattened_compactor_cfg,
+            "evaluator": flattened_evaluator_cfg,
+        }
+        key = _wide_row_key(wide_meta)
+        existing = working.get(key)
+        if existing is None:
+            pending_full_metas.append(wide_meta)
+            pending_full_injected.append(pair.with_messages)
+        elif (
+            existing.get("compacted_post_sssc_compliant") is None
+            and existing.get("compacted_context") is not None
+        ):
+            pending_post_keys.append(key)
 
     if not pending_full_metas and not pending_post_keys:
         print(
@@ -995,9 +1028,7 @@ def _run_compacted_phase(
         )
         return
 
-    # ------------------------------------------------------------------
-    # Phase A: compaction (only for pending_full)
-    # ------------------------------------------------------------------
+    # Compaction (pending_full only).
     compacted_contexts: list[list[Message] | None] = []
     compaction_statuses: list[str] = []
     compaction_errors: list[str | None] = []
@@ -1078,9 +1109,7 @@ def _run_compacted_phase(
                 close()
             gc.collect()
 
-    # ------------------------------------------------------------------
-    # Phase B: probes (3 + 4 for pending_full; 4 only for pending_post)
-    # ------------------------------------------------------------------
+    # Probes: cases 3 + 4 for pending_full, case 4 only for pending_post.
     inference_runtime = _build_probe_runtime(if_model, provider, probe_kwargs)
     evaluator_runtime = OpenAIRuntime(config={}) if pending_full_metas else None
 
@@ -1120,9 +1149,12 @@ def _run_compacted_phase(
         for off, (compacted, content) in enumerate(zip(compacted_batch, user_contents)):
             if compacted is None:
                 continue
+            pair_key = _PairKey(
+                int(metas[off]["source_row_index"]), int(metas[off]["sssc_id"])
+            )
             convos.append(
                 [
-                    {"role": "system", "content": system_prompt},
+                    {"role": "system", "content": system_by_pair[pair_key]},
                     get_sssc_evaluation_tool_message(),
                     *compacted,
                     {"role": "user", "content": content},
@@ -1281,10 +1313,6 @@ def _run_compacted_phase(
     print(f"Wide evaluation results saved to {save_path}")
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
 @hydra.main(version_base=None, config_path="../../../config/tasks/eval", config_name=None)
 def main(cfg: DictConfig) -> None:
     apply_runtime_environment()
@@ -1327,9 +1355,13 @@ def main(cfg: DictConfig) -> None:
             num_rows=num_rows,
         )
         rows = loader.rows()
-        print(f"[{dataset_name}] loaded {len(rows)} row(s) from {dataset_path}")
+        natural_sc = rows[0].sssc is not None
+        print(
+            f"[{dataset_name}] loaded {len(rows)} row(s) from {dataset_path}"
+            f"{' (natural SC)' if natural_sc else ''}"
+        )
 
-        swap_seeds = _compute_pair_swap_seeds(rows, SSSCS, global_seed)
+        dataset_sssc_attrs = _resolve_sssc_attrs(sssc_attrs, natural_sc, dataset_name)
 
         for probe_name, probe_cfg in probe_container.items():
             probe_kwargs = dict(probe_cfg.get("kwargs", {}))
@@ -1337,14 +1369,21 @@ def main(cfg: DictConfig) -> None:
             provider = str(probe_cfg["provider"])
             flattened_probe_cfg = {"name": probe_name, **_flatten_dict(probe_cfg)}
 
-            system_prompt = _retrieve_sys_prompt(dataset_name, if_model)
+            # Natural-SC rows carry the trace's own system prompt.
+            dataset_system_prompt = (
+                None if natural_sc else _retrieve_sys_prompt(dataset_name, if_model)
+            )
+            pairs = _build_pairs(
+                rows, dataset_sssc_attrs, dataset_system_prompt, global_seed
+            )
+            swap_seeds = _compute_pair_swap_seeds(pairs, global_seed)
 
             shared_spec = build_run_spec(
                 test=test,
                 dataset_name=dataset_name,
                 dataset_dir=dataset_dir,
                 num_rows=num_rows,
-                sssc_attrs=sssc_attrs,
+                sssc_attrs=dataset_sssc_attrs,
                 global_seed=global_seed,
                 probe_name=probe_name,
                 probe_cfg=probe_cfg,
@@ -1369,9 +1408,8 @@ def main(cfg: DictConfig) -> None:
                 full_probe_df = _build_retention_only_full_probe_df(
                     dataset_name=dataset_name,
                     dataset_path=str(dataset_path),
-                    rows=rows,
-                    ssscs=SSSCS,
-                    sssc_attrs=sssc_attrs,
+                    pairs=pairs,
+                    sssc_attrs=dataset_sssc_attrs,
                     swap_seeds=swap_seeds,
                     flattened_probe_cfg=flattened_probe_cfg,
                 )
@@ -1383,16 +1421,13 @@ def main(cfg: DictConfig) -> None:
                 full_probe_df = _ensure_full_probes(
                     dataset_name=dataset_name,
                     dataset_path=str(dataset_path),
-                    rows=rows,
-                    ssscs=SSSCS,
-                    sssc_attrs=sssc_attrs,
+                    pairs=pairs,
+                    sssc_attrs=dataset_sssc_attrs,
                     swap_seeds=swap_seeds,
                     flattened_probe_cfg=flattened_probe_cfg,
                     probe_kwargs=probe_kwargs,
                     if_model=if_model,
                     provider=provider,
-                    system_prompt=system_prompt,
-                    global_seed=global_seed,
                     save_path=shared_path,
                     overwrite=overwrite,
                 )
@@ -1407,7 +1442,7 @@ def main(cfg: DictConfig) -> None:
                     dataset_name=dataset_name,
                     dataset_dir=dataset_dir,
                     num_rows=num_rows,
-                    sssc_attrs=sssc_attrs,
+                    sssc_attrs=dataset_sssc_attrs,
                     global_seed=global_seed,
                     probe_name=probe_name,
                     probe_cfg=probe_cfg,
@@ -1428,10 +1463,7 @@ def main(cfg: DictConfig) -> None:
                 )
                 _run_compacted_phase(
                     dataset_name=dataset_name,
-                    rows=rows,
-                    ssscs=SSSCS,
-                    sssc_attrs=sssc_attrs,
-                    swap_seeds=swap_seeds,
+                    pairs=pairs,
                     full_probe_df=full_probe_df,
                     compactor_name=compactor_name,
                     compactor_cfg=compactor_cfg,
@@ -1442,8 +1474,6 @@ def main(cfg: DictConfig) -> None:
                     probe_kwargs=probe_kwargs,
                     if_model=if_model,
                     provider=provider,
-                    system_prompt=system_prompt,
-                    global_seed=global_seed,
                     save_path=save_path,
                     overwrite=overwrite,
                 )

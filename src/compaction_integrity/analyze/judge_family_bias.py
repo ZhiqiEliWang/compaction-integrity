@@ -1,15 +1,12 @@
 """Retention judge validity: 3-way human/GPT-5.4/gemini agreement + family-bias.
 
-Addresses the single-judge / model-family-bias critique of the retention metric
-using the family probe (judge_robustness_eval/make_family_probe.py -> judge_family_probe.py),
+Uses the family probe (scripts/judge_robustness/make_family_probe.py -> judge_family_probe.py),
 a population-rate sample that NESTS the 50-row human blind set. Two reports:
 
   PART A -- 3-WAY on the human-50 (ground truth = human)
     All three pairwise agreements (human<->GPT-5.4, human<->gemini,
     GPT-5.4<->gemini) with Cohen's kappa + confusion, the full joint 8-cell
-    (human, gpt5.4, gemini) distribution, and the unanimous-agreement rate. If
-    both judges track the human, retention measures what a human means by
-    "SC preserved" -- not a GPT-5.4 idiosyncrasy.
+    (human, gpt5.4, gemini) distribution, and the unanimous-agreement rate.
 
   PART B -- 2-WAY on the full sample (GPT-5.4 vs gemini) + MODEL-FAMILY BIAS
     Population-rate agreement + kappa overall, then per-compactor signed gap
@@ -19,17 +16,15 @@ a population-rate sample that NESTS the 50-row human blind set. Two reports:
         OpenAI compactors (== GPT-5.4 family) -> delta > 0,
         Google compactor  (== gemini family)  -> delta < 0,
         neutral compactors                    -> delta ~ 0.
-    A flat delta is the evidence no model-family bias drives the retention
-    comparison (incl. GPT-5.4-mini vs other compactors).
 
 Inputs are the two jsonl files produced by the family probe; nothing here
 recomputes a judge verdict.
 
 Usage:
   python -m compaction_integrity.analyze.judge_family_bias \
-    --judged judge_robustness_eval/family_probe_judged.jsonl \
-    --human  judge_robustness_eval/balanced_blind_labeled.jsonl \
-    [--out_dir judge_robustness_eval]
+    --judged studies/judge_robustness/generated/family_probe_judged.jsonl \
+    --human  studies/judge_robustness/labels/balanced_blind_labeled.jsonl \
+    [--out_dir studies/judge_robustness/generated]
 """
 
 import argparse
@@ -43,14 +38,10 @@ _YES = {"yes", "y", "true", "1", "present"}
 _NO = {"no", "n", "false", "0", "absent"}
 
 # Compactor families that coincide with a judge's family (see FAMILY_MAP in
-# judge_robustness_eval/make_family_probe.py). GPT-5.4 -> openai, gemini -> google.
+# scripts/judge_robustness/make_family_probe.py). GPT-5.4 -> openai, gemini -> google.
 GPT54_JUDGE_FAMILY = "openai"
 GEMINI_JUDGE_FAMILY = "google"
 
-
-# ---------------------------------------------------------------------------
-# IO + label parsing
-# ---------------------------------------------------------------------------
 
 def _load_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
@@ -79,10 +70,6 @@ def _parse_label(raw: Any) -> bool | None:
         return False
     return None
 
-
-# ---------------------------------------------------------------------------
-# Pairwise agreement
-# ---------------------------------------------------------------------------
 
 def _cohen_kappa(a: list[bool], b: list[bool]) -> float:
     n = len(a)
@@ -119,10 +106,6 @@ def _print_pair(title: str, ref: str, other: str, s: dict[str, Any]) -> None:
     print(f"    {ref}=YES              {s['xt_yt']:>6}  {s['xt_yn']:>6}")
     print(f"    {ref}=NO               {s['xn_yt']:>6}  {s['xn_yn']:>6}")
 
-
-# ---------------------------------------------------------------------------
-# PART A -- 3-way on the human-50
-# ---------------------------------------------------------------------------
 
 def _part_a(rows: list[dict[str, Any]], human: dict[str, bool | None],
             out_dir: Path) -> None:
@@ -164,7 +147,6 @@ def _part_a(rows: list[dict[str, Any]], human: dict[str, bool | None],
     _print_pair("human vs gemini ", "human", "gemini", s_hm)
     _print_pair("GPT-5.4 vs gemini", "gpt5.4", "gemini", s_gm)
 
-    # Joint 8-cell (human, gpt5.4, gemini) distribution.
     joint = Counter((t["human"], t["gpt54"], t["gemini"]) for t in triples)
     unanimous = sum(v for (a, b, c), v in joint.items() if a == b == c)
     print(f"\njoint (human, gpt5.4, gemini) distribution  [unanimous "
@@ -175,12 +157,10 @@ def _part_a(rows: list[dict[str, Any]], human: dict[str, bool | None],
         y = lambda v: "YES" if v else "NO"
         print(f"  {y(combo[0]):>6} {y(combo[1]):>7} {y(combo[2]):>7}   {joint[combo]:>5}{tag}")
 
-    # Both judges vs human as ground truth: who's closer.
     print(f"\n  --> vs human: GPT-5.4 {s_hg['agree_rate']:.1%} (kappa {s_hg['kappa']:.3f}), "
           f"gemini {s_hm['agree_rate']:.1%} (kappa {s_hm['kappa']:.3f}); "
           f"the two judges agree with each other {s_gm['agree_rate']:.1%}.")
 
-    # Any row where a judge diverges from the human.
     disagree = [t for t in triples if not (t["human"] == t["gpt54"] == t["gemini"])]
     if disagree:
         print(f"\nnon-unanimous rows ({len(disagree)}):")
@@ -197,10 +177,6 @@ def _part_a(rows: list[dict[str, Any]], human: dict[str, bool | None],
         w.writerows(triples)
     print(f"\nWrote 3-way per-row table -> {csv_path}")
 
-
-# ---------------------------------------------------------------------------
-# PART B -- 2-way + family bias on the full sample
-# ---------------------------------------------------------------------------
 
 def _part_b(rows: list[dict[str, Any]], out_dir: Path) -> None:
     print("\n" + "=" * 72)

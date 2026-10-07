@@ -29,6 +29,7 @@ class OpenAIRuntime(ModelRuntime):
             return {}
         return {
             "prompt_tokens": int(getattr(usage_obj, "input_tokens", 0)),
+            "cached_tokens": int(usage_obj.input_tokens_details.cached_tokens),
             "completion_tokens": int(getattr(usage_obj, "output_tokens", 0)),
             "total_tokens": int(getattr(usage_obj, "total_tokens", 0)),
         }
@@ -267,17 +268,17 @@ class OpenAIRuntime(ModelRuntime):
             model=str(body.get("model") or fallback_model),
             usage={
                 "prompt_tokens": int(usage.get("input_tokens", 0)),
+                "cached_tokens": int(usage["input_tokens_details"]["cached_tokens"]),
                 "completion_tokens": int(usage.get("output_tokens", 0)),
                 "total_tokens": int(usage.get("total_tokens", 0)),
             },
             raw=raw_response,
         )
 
-    # OpenAI Batch API per-file caps. Keep file-size headroom under the 200 MB
-    # documented limit to allow for multipart upload overhead. The per-model
-    # enqueued-token cap is enforced by the caller (e.g. evaluation.py picks a
-    # batch_size that fits under the cap, since dataset names encode the
-    # per-request context length).
+    # OpenAI Batch API per-file caps; file size stays under the documented 200 MB
+    # to leave room for multipart upload overhead. The per-model enqueued-token
+    # cap is enforced by the caller (evaluation.py sizes batch_size from the
+    # per-request context length encoded in the dataset name).
     _BATCH_MAX_REQUESTS = 50_000
     _BATCH_MAX_FILE_BYTES = 190 * 1024 * 1024
 

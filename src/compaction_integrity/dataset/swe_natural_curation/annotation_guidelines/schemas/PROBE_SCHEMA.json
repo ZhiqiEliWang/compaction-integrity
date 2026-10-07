@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["annotation_id", "target_clause_index", "sc_text", "status", "user", "compliant", "violating", "probe_note", "context_assumptions"],
+  "properties": {
+    "annotation_id": {"type": "string", "minLength": 1},
+    "target_clause_index": {"type": "integer", "minimum": 0},
+    "sc_text": {"type": "string", "minLength": 1},
+    "status": {"enum": ["ready", "hold"]},
+    "user": {"type": "string"}, "compliant": {"type": "string"}, "violating": {"type": "string"},
+    "probe_note": {"type": "string", "minLength": 1}, "context_assumptions": {"type": "string"}
+  }
+}

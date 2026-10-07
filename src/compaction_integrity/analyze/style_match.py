@@ -2,23 +2,17 @@
 from *compaction ability* or from stylistic match between the source-trajectory
 author model and the compactor's own model family?
 
-Reviewer concern (paraphrased): the RQ1 matrix compares compactors across
-heterogeneous trajectory styles (wildchat / hermes / openresearcher) whose
-source models differ, so observed model/dataset differences might be driven by
-source-trajectory <-> compactor mismatch rather than compaction ability.
-
-We can test this *without generating any new trajectory*, because each source
-dataset has a known author family and one of them was authored by the headline
-compactor family:
+Each source dataset has a known author family, and one of them was authored by
+the headline compactor family:
 
     wildchat        -> OpenAI (GPT-3.5/4)      matched compactor: gpt_5.4_mini
     hermes (GLM)    -> GLM-5.1 (ZhipuAI)       matched compactor: (none in set)
     openresearcher  -> GPT-OSS-120B            matched compactor: gpt_oss_120b  <- MATCHED
 
-So `openresearcher x gpt_oss_120b` is a genuine *matched* cell already present in
-the existing runs, while `gpt_oss_120b` is *mismatched* on wildchat and hermes.
+So `openresearcher x gpt_oss_120b` is a *matched* cell, while `gpt_oss_120b` is
+*mismatched* on wildchat and hermes.
 
-Core estimand -- a difference-in-differences "home-field" effect that nets out
+Estimand: a difference-in-differences "home-field" effect that nets out
 (a) how good the compactor generally is and (b) how hard the dataset generally
 is:
 
@@ -55,12 +49,11 @@ from compaction_integrity.analyze.utils import (
     load_manifest_results,
     tee_stdout,
 )
+from compaction_integrity.viz_config import HEATMAP_CMAP, HEATMAP_DIVERGING_CMAP
 
-# ----------------------------------------------------------------------------
 # Provenance: author family of each source dataset, and model family of each
 # compactor. `matched` == a cell where the compactor's family authored the
 # source trajectories.
-# ----------------------------------------------------------------------------
 
 # keyed by extract_dataset_config(dataset) -> e.g. "wildchat_cat"
 DATASET_AUTHOR_FAMILY: dict[str, str] = {
@@ -124,8 +117,7 @@ def _cell_table(df: pd.DataFrame) -> pd.DataFrame:
 
 def _additive_residuals(tab: pd.DataFrame) -> pd.DataFrame:
     """Two-way additive-model residuals: R(c,d) - rowmean(c) - colmean(d) + grand.
-    Positive residual on a matched cell == the confound the reviewer worries
-    about."""
+    Positive residual on a matched cell == the style-match confound."""
     grand = np.nanmean(tab.values)
     row = tab.mean(axis=1)
     col = tab.mean(axis=0)
@@ -151,7 +143,7 @@ def _home_field_did(
 
     fam = df["compactor_family"]
     focal = df[fam == family]
-    peers = df[fam.notna() & (fam != family)]  # other LLM compactors only
+    peers = df[fam.notna() & (fam != family)]
     if focal.empty or peers.empty:
         return None
 
@@ -175,7 +167,6 @@ def _home_field_did(
 
     # Cluster bootstrap over source conversations within each dataset.
     rng = np.random.default_rng(seed)
-    # unique conversation ids per dataset
     conv_key = ["dataset_config", "source_row_index"]
     focal_g = {k: v for k, v in focal.groupby(conv_key)}
     peers_g = {k: v for k, v in peers.groupby(conv_key)}
@@ -224,8 +215,8 @@ def _plot_heatmaps(tab: pd.DataFrame, resid: pd.DataFrame, df: pd.DataFrame, out
     row_labels = [fmt_compactor_label(r) for r in tab.index]
 
     for name, data, cmap, center in [
-        ("retention", tab, "viridis", None),
-        ("interaction_residual", resid, "RdBu_r", 0.0),
+        ("retention", tab, HEATMAP_CMAP, None),
+        ("interaction_residual", resid, HEATMAP_DIVERGING_CMAP, 0.0),
     ]:
         fig, ax = plt.subplots(figsize=(1.6 + 1.4 * data.shape[1], 1.0 + 0.5 * data.shape[0]))
         arr = data.values.astype(float)
@@ -293,7 +284,6 @@ def main() -> None:
         print("two-way interaction residual  (positive on a matched cell == the confound):")
         print(resid.round(3), "\n")
 
-        # residuals on matched vs mismatched cells
         rows = []
         for c in tab.index:
             for d in tab.columns:
@@ -327,7 +317,7 @@ def main() -> None:
                   f"95% CI=[{res['ci_lo']:+.3f}, {res['ci_hi']:+.3f}]  "
                   f"(nboot={res['n_boot']})")
         print("  DiD > 0  => family does relatively better on its OWN-authored source")
-        print("             (supports the reviewer's style-match confound).")
+        print("             (supports the style-match confound).")
         print("  CI spanning 0 => no detectable home-field advantage.\n")
 
         cell_df.to_csv(out / "cell_residuals.csv", index=False)

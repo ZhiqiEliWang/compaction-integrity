@@ -4,8 +4,16 @@ src/outputs/
 
 # custom files
 data/
-ipynb/
 temp/
+logs/
+# figure/ scripts write their outputs next to themselves; the project page copies live in docs/static/.
+figure/*.png
+figure/*.pdf
+figure/*.svg
+*.csv
+# sub-study artifacts that scripts regenerate; the hand labels in labels/ stay tracked.
+studies/*/generated/
+studies/notebooks/
 conf/
 .vscode/
 AGENTS.md
@@ -223,7 +231,3 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-
-# judge_robustness_eval: ignore generated result files, keep jsonl (and scripts) tracked
-judge_robustness_eval/*.csv
-judge_robustness_eval/*.png

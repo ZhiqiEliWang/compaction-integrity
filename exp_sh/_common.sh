@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sourced helpers for the rqN/*.sh experiment runners.
+# Helpers sourced by every exp_sh/ runner.
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ run_eval() {
     --config-name "${config_name}"
 }
 
-# Run the SC-extractor evaluation (RQ4) for one config under config/experiments/rq4/.
+# Run the SC-extractor evaluation (RQ4) for one config under config/tasks/sc_extractor/.
 # Usage: run_sc_extractor_eval <config_name>
 run_sc_extractor_eval() {
   local config_name="$1"

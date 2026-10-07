@@ -2,7 +2,7 @@
 #
 # Each run is parametrised by two binary "prefix" flags (explicit on/off,
 # hard on/off), giving a 2x2 quadrant per compactor. For each compactor we
-# plot the retention rate and the effect-retention metric across the quadrant.
+# plot the retention rate and the effective-retention metric across the quadrant.
 
 import argparse
 from pathlib import Path
@@ -21,6 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq3/diff_prefix.yaml"
 
 from compaction_integrity.analyze.utils import (
+    COMPACTOR_LABEL_COLORS,
     extract_compactor_name,
     extract_dataset_config,
     fmt_compactor_label,
@@ -29,7 +30,7 @@ from compaction_integrity.analyze.utils import (
     ordered_compactor_labels,
     tee_stdout,
 )
-from compaction_integrity.viz_config import set_paper_style, set_talk_style
+from compaction_integrity.viz_config import HEATMAP_CMAP, set_paper_style, set_talk_style
 
 
 PREFIX_SUFFIXES: list[tuple[str, bool, bool]] = [
@@ -47,7 +48,7 @@ HARD_LABELS = {False: "non-hard", True: "hard"}
 
 METRIC_TITLES = {
     "retention_rate": "Retention Rate",
-    "effect_retention": "Effect Retention",
+    "effective_retention": "Effective Retention",
 }
 
 
@@ -121,7 +122,7 @@ def build_summary_table(df: pd.DataFrame) -> pd.DataFrame:
             else float("nan")
         )
         denom = upper_bound - uninjected_baseline
-        effect_retention = (
+        effective_retention = (
             calibrated / denom
             if not (np.isnan(calibrated) or np.isnan(denom)) and denom != 0
             else float("nan")
@@ -140,7 +141,7 @@ def build_summary_table(df: pd.DataFrame) -> pd.DataFrame:
                 "uninjected_baseline_compliance": uninjected_baseline,
                 "upper_bound_compliance": upper_bound,
                 "calibrated_compliance": calibrated,
-                "effect_retention": effect_retention,
+                "effective_retention": effective_retention,
             }
         )
     return pd.DataFrame(rows)
@@ -168,9 +169,9 @@ def _plot_single_quadrant(
 ) -> None:
     fig, ax = plt.subplots(figsize=(3.2, 2.8))
     if metric == "retention_rate":
-        vmin, vmax, cmap = 0.0, 1.0, "viridis"
+        vmin, vmax, cmap = 0.0, 1.0, HEATMAP_CMAP
     else:
-        vmin, vmax, cmap = -0.2, 1.0, "magma"
+        vmin, vmax, cmap = -0.2, 1.0, HEATMAP_CMAP
     sns.heatmap(
         pivot,
         annot=True,
@@ -208,9 +209,9 @@ def _plot_grid(
         squeeze=False,
     )
     if metric == "retention_rate":
-        vmin, vmax, cmap = 0.0, 1.0, "viridis"
+        vmin, vmax, cmap = 0.0, 1.0, HEATMAP_CMAP
     else:
-        vmin, vmax, cmap = -0.2, 1.0, "magma"
+        vmin, vmax, cmap = -0.2, 1.0, HEATMAP_CMAP
 
     for idx, compactor_label in enumerate(compactor_order):
         r, c = divmod(idx, n_cols)
@@ -284,7 +285,6 @@ def _plot_framing_grouped_bar(
     bar_width = total_width / max(n_compactors, 1)
 
     fig, ax = plt.subplots(figsize=(6.3, 2.6))
-    cmap = plt.get_cmap("tab10")
     for i, compactor in enumerate(compactors):
         offsets = x - total_width / 2 + bar_width * (i + 0.5)
         values = pivot.loc[compactor].values
@@ -293,7 +293,7 @@ def _plot_framing_grouped_bar(
             values,
             bar_width,
             label=compactor,
-            color=cmap(i % 10),
+            color=COMPACTOR_LABEL_COLORS[compactor],
         )
         ax.bar_label(
             bars,
@@ -332,15 +332,14 @@ def _plot_framing_slope(
     x = np.arange(len(framings))
 
     fig, ax = plt.subplots(figsize=(6.3, 2.6))
-    cmap = plt.get_cmap("tab10")
-    for i, compactor in enumerate(compactors):
+    for compactor in compactors:
         values = pivot.loc[compactor].values
         ax.plot(
             x,
             values,
             marker="o",
             linewidth=1.8,
-            color=cmap(i % 10),
+            color=COMPACTOR_LABEL_COLORS[compactor],
             label=compactor,
         )
 
@@ -362,7 +361,7 @@ def _plot_framing_slope(
 
 
 def plot_framing_comparisons(summary: pd.DataFrame, output_dir: Path) -> None:
-    for metric in ("retention_rate", "effect_retention"):
+    for metric in ("retention_rate", "effective_retention"):
         for dataset_config, g in summary.groupby("dataset_config"):
             pivot = _framing_pivot(g, metric)
             if pivot.empty:
@@ -400,7 +399,7 @@ def plot_framing_comparisons(summary: pd.DataFrame, output_dir: Path) -> None:
 
 
 def plot_all_quadrants(summary: pd.DataFrame, output_dir: Path) -> None:
-    for metric in ("retention_rate", "effect_retention"):
+    for metric in ("retention_rate", "effective_retention"):
         for (dataset_config, compactor_name, compactor_label), g in summary.groupby(
             ["dataset_config", "compactor_name", "compactor"]
         ):
@@ -479,7 +478,7 @@ if __name__ == "__main__":
             "uninjected_baseline_compliance",
             "upper_bound_compliance",
             "calibrated_compliance",
-            "effect_retention",
+            "effective_retention",
         ]:
             display[col] = display[col].map(
                 lambda value: f"{100 * value:.1f}%" if not np.isnan(value) else "nan"

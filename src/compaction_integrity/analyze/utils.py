@@ -12,6 +12,8 @@ from typing import Any
 from omegaconf import DictConfig, OmegaConf
 import pandas as pd
 
+from compaction_integrity.viz_config import COMPACTOR_COLORS
+
 
 _DATASET_MANIFEST_IDENTITY_FIELDS = (
     "dataset",
@@ -211,12 +213,13 @@ _COMPACTOR_MODEL_LABELS: dict[str, str] = {
     "gpt_oss_120b": "gpt-oss",
     "qwen30b": "Qwen3",
     "gemma_4": "Gemma-4",
+    "gpt_5.4_mini": "GPT-5.4-mini",
 }
 
 _COMPACTOR_PROMPT_LABELS: dict[str, str] = {
     "anthropic_sc_targeted": "Anthropic + SC target",
     "anthropic": "Anthropic",
-    "pi_mono": "pi-mono",
+    "pi_mono": "Pi",
 }
 
 
@@ -278,10 +281,18 @@ def fmt_compactor_label(name: str) -> str:
     return name.replace("_", " ").title()
 
 
+# Display label -> color, for plots keyed by compactor_name_label.
+COMPACTOR_LABEL_COLORS: dict[str, str] = {
+    fmt_compactor_label(name): color for name, color in COMPACTOR_COLORS.items()
+}
+
+
 _DATASET_LABELS: dict[str, str] = {
     "hermes_cat": "HermesAgent",
     "wildchat_cat": "WildChat",
     "openresearcher_cat": "OpenResearcher",
+    # extract_dataset_config("swe_natural_sc_100k_n126") -> "swe_natural_sc_100k"
+    "swe_natural_sc_100k": "SWE-Natural",
 }
 
 

@@ -1,0 +1,52 @@
+# End-to-end broad-task-constraint annotation of an SC candidate sheet, following
+# the annotation_guidelines/ package (rubric 1.0-broad-default) with API model
+# workers. See dataset/swe_natural_curation/annotate_sc.py for the stage list and outputs.
+#
+#   python -m compaction_integrity.dataset.swe_natural_curation.annotate_sc --config-name annotate \
+#     input_csv=studies/swe_natural/generated/sc_candidates.open_swe_251_500.csv \
+#     run_dir=/data/compaction_integrity/annotation_runs/open_swe_251_500
+#
+# Rerunning with the same run_dir resumes from the last finished partition.
+
+input_csv: ??? # candidate sheet: annotation_id, instance_id, candidate_paragraph, issue_text, ...
+run_dir: ??? # created on first launch; must lie outside the package
+# Frozen into <run_dir>/frozen/package; later stages read only the frozen copy.
+# null = dataset/swe_natural_curation/annotation_guidelines/.
+package_dir: null
+export_dir: ${run_dir}/export # sc_annotations.broad_keeps.*.csv; probe_ready is the dataset.py build input
+
+mode: full # full | calibration (stop after calibration_report.md)
+seed: 20260905 # package default; partitions, calibration sample, agreed-negative review sample
+calibration_ids: null # JSON array of annotation_ids for an explicit calibration set; null = package selection
+
+max_revision_rounds: 3 # probe review -> targeted revision rounds before the run stops with revisions pending
+probe_rows_per_call: 8 # entries per probe quality-review / revision call (package row_parts size)
+
+# Worker runtime shared by every stage. Each call is a fresh, isolated context.
+llm:
+  provider: openai # openai | vllm | vllm_serve
+  # No dated snapshot exists; dispatch_log.jsonl records the model each call reports.
+  model: gpt-5.6-terra
+  batch: false # true -> runtime.batch_generate (OpenAI Batch API / vLLM offline batch)
+  # Partitions in flight when batch=false (passes A/B of a partition run back to back).
+  # Keep calls per cache prefix under ~15/min, or OpenAI spills requests to machines
+  # without the cached prefix.
+  max_workers: 8
+  max_attempts: 4 # validation-feedback attempts per partition before the run fails
+  kwargs:
+    timeout_s: 3600
+  params:
+    reasoning:
+      effort: high
+    max_output_tokens: 128000
+    # OpenAI prompt caching. One routing key for the run's shared prefixes, retained
+    # 24h (default in-memory retention is minutes), so pass B, retries, later stages
+    # and a resumed run still hit. Drop both keys for vllm/vllm_serve.
+    prompt_cache_key: compint-annotate-sc
+    prompt_cache_retention: 24h
+
+# Per-role overrides deep-merged over `llm`, e.g. a different model for pass B:
+#   +stage_llm.annotate_B.model=gpt-5.5
+# Roles: annotate_A annotate_B controls adjudicate type_A type_B type_adjudicate
+#        probe_draft probe_review probe_revise
+stage_llm: {}

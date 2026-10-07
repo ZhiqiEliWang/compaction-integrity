@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lost in Compaction</title>
-<meta name="description" content="Evaluating Side-Constraint Loss under Context Compaction. Compactors retain 17% of user-issued session constraints on average; an SC-aware extractor recovers over 90%.">
-<meta property="og:title" content="Lost in Compaction">
-<meta property="og:description" content="Evaluating Side-Constraint Loss under Context Compaction">
+<title>Lost in Context Compaction</title>
+<meta name="description" content="When LLM Systems Drop Side Constraints. Compactors retain 17% of user-issued side constraints on average; an SC-aware extractor recovers over 90%.">
+<meta property="og:title" content="Lost in Context Compaction">
+<meta property="og:description" content="When LLM Systems Drop Side Constraints">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://zhiqieliwang.github.io/compaction-integrity/static/fig1-failure-mode.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -52,10 +52,10 @@ footer{margin-top:4rem;padding-top:1rem;border-top:1px solid var(--rule);color:v
 </head>
 <body>
 
-<h1>Lost in Compaction</h1>
-<p class="sub">Evaluating Side-Constraint Loss under Context Compaction</p>
-<p class="meta"><a href="https://zhiqieliwang.github.io/">Zhiqi Wang</a>, Yichi Zhang, Dongwon Lee, Yuchen Yang</p>
-<p class="affil">The Pennsylvania State University</p>
+<h1>Lost in Context Compaction</h1>
+<p class="sub">When LLM Systems Drop Side Constraints</p>
+<p class="meta"><a href="https://zhiqieliwang.github.io/">Zhiqi Wang</a><sup>1</sup>, Yichi Zhang<sup>1</sup>, Dongwon Lee<sup>1</sup>, Nathalie Baracaldo<sup>2</sup>, Yuchen Yang<sup>1</sup></p>
+<p class="affil"><sup>1</sup>The Pennsylvania State University &nbsp; <sup>2</sup>IBM Research</p>
 <p class="links">
   <a href="https://arxiv.org/abs/2608.11242">arXiv</a> &nbsp;
   <a href="https://github.com/ZhiqiEliWang/compaction-integrity">Code</a>
@@ -64,7 +64,7 @@ footer{margin-top:4rem;padding-top:1rem;border-top:1px solid var(--rule);color:v
 <h2>Abstract</h2>
 <p>When the context window is under pressure, LLM systems compact prior context to
 continue ongoing tasks. We identify a class of user-issued instructions,
-<em>session constraints</em> (SCs), such as &ldquo;do not delete any emails until I
+<em>side constraints</em> (SCs), such as &ldquo;do not delete any emails until I
 confirm,&rdquo; that are meant to constrain the model&rsquo;s behavior for the remainder
 of a session but are silently dropped during compaction. To quantify this loss we
 introduce <span class="sc">Compint</span>, an evaluation suite that measures compactors
@@ -79,7 +79,7 @@ or the LLM.</p>
 
 <h2>Failure mode</h2>
 <figure>
-  <img src="static/fig1-failure-mode.svg" alt="Three panels: the user states a side constraint and the agent honors it; the compactor summarizes and drops the constraint; the agent then acts without confirming, violating it.">
+  <img src="static/fig1-failure-mode.svg" alt="Three panels from an inbox-cleanup session: the user asks the agent to suggest deletions and adds the side constraint &quot;Don't act until I tell you to&quot;, and the agent only suggests; the compactor's summary drops the constraint; after &quot;Please continue working through the rest of my inbox.&quot; the agent calls delete_email and deletes 10 emails.">
   <figcaption>Figure 1. The agent honors the constraint, loses it to compaction, then violates it
   without signalling that anything was dropped.</figcaption>
 </figure>
@@ -87,12 +87,13 @@ or the LLM.</p>
 <h2>Evaluation suite</h2>
 <p><span class="sc">Compint</span> crosses four axes. Fifteen hand-written SCs span five
 categories; each is rendered under four framings (constraint strength by explicitness)
-and injected into a 100K-token context at one of four locations. The context is then
+and injected into a 100K-token context at one of four locations. SWE-Natural adds real
+GitHub issues whose authors already wrote an SC, so nothing is injected. The context is then
 compacted and scored two ways: <em>retention</em>, whether the SC still appears in the
 summary, and <em>compliance</em>, whether the model behaves according to it on a
 forced-choice probe.</p>
 <figure>
-  <img src="static/fig2-compint-overview.svg" alt="Overview of COMPINT: the five-category SC taxonomy, the four framings and four injection locations, and the retention and compliance evaluation paths.">
+  <img src="static/fig2-compint-overview.png" alt="Overview of COMPINT: the five-category SC taxonomy; the four framings and four injection locations (top, middle, bottom, repeated); SWE-Natural GitHub issues that already contain an SC; and the compactor followed by the retention and compliance evaluations.">
   <figcaption>Figure 2. The <span class="sc">Compint</span> evaluation suite.</figcaption>
 </figure>
 
@@ -157,7 +158,7 @@ slowly as contexts get longer.</p>
 <h2>Code</h2>
 <p>Dataset construction, experiment runners, analysis code, and the extractor are on
 <a href="https://github.com/ZhiqiEliWang/compaction-integrity">GitHub</a>. The README maps
-each section of the paper to the runner and analysis module that produces it.</p>
+each table and figure to the command that reproduces it.</p>
 <pre>git clone https://github.com/ZhiqiEliWang/compaction-integrity
 cd compaction-integrity
 pip install -e .
@@ -166,8 +167,8 @@ bash exp_sh/rq1/run_main.sh       # reproduce the main table</pre>
 
 <h2>Citation</h2>
 <pre>@misc{wang2026lostcompactionevaluatingsideconstraint,
-      title={Lost in Compaction: Evaluating Side-Constraint Loss under Context Compaction}, 
-      author={Zhiqi Wang and Yichi Zhang and Dongwon Lee and Yuchen Yang},
+      title={Lost in Context Compaction: When LLM Systems Drop Side Constraints}, 
+      author={Zhiqi Wang and Yichi Zhang and Dongwon Lee and Nathalie Baracaldo and Yuchen Yang},
       year={2026},
       eprint={2608.11242},
       archivePrefix={arXiv},

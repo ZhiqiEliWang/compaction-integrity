@@ -1,0 +1,22 @@
+# COMPINT-SWE-Natural external validation, n126: same compactor matrix as
+# rq1/main.yaml, on 126 author-written native-issue SCs over 114 tasks: the 35-row
+# nebius OpenHands batch, 22 clause-level SCs from the first Open-SWE-Traces batch
+# (its 13 interface-spec SCs dropped), and 69 SCs from Open-SWE batches 251_500
+# and 501_750. Generated "New interfaces introduced:" spec text is excluded.
+# Run ids from: python -m compaction_integrity.scripts.print_eval_run_ids \
+#                   config/tasks/eval/swe_natural_sc_100k_n126.yaml
+experiment: "rq1"
+runs:
+  # swe_natural_sc_100k_n126
+  - run_id: swe_natural_sc_100k_n126__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n126__full__fdbe5da2e0
+    label: swe_natural_sc_100k_n126_gpt_oss_120b_anthropic_prompt
+  - run_id: swe_natural_sc_100k_n126__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n126__full__8be2d749f9
+    label: swe_natural_sc_100k_n126_gpt_oss_120b_pi_mono_prompt
+  - run_id: swe_natural_sc_100k_n126__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n126__full__5a3f8e305c
+    label: swe_natural_sc_100k_n126_qwen30b_anthropic_prompt
+  - run_id: swe_natural_sc_100k_n126__gemma_4_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n126__full__052dbdb7d7
+    label: swe_natural_sc_100k_n126_gemma_4_anthropic_prompt
+  - run_id: swe_natural_sc_100k_n126__recent_5__gpt_oss_120b__llm_gpt_5_4__n126__full__320d223356
+    label: swe_natural_sc_100k_n126_recent_5
+  - run_id: swe_natural_sc_100k_n126__llmlingua2_t500__gpt_oss_120b__llm_gpt_5_4__n126__full__306c876f41
+    label: swe_natural_sc_100k_n126_llmlingua2_t500

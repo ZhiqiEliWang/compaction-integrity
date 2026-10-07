@@ -3,8 +3,10 @@
 For each (dataset_row, sssc) pair:
   1. Inject the SSSC into the row's messages (reuses `_inject_sssc` from
      evaluation.py, controlled by `sssc_attrs`).
-  2. Walk the conversation turn-by-turn. At every user turn, call the SC
-     extractor SLM with `build_sc_extraction_prompts(...)`, passing the
+  2. Walk the conversation turn-by-turn. At every user turn (or, with
+     `window_sentences`, every window of that many sentences in it), call the SC
+     extractor SLM with the configured extraction prompt (`prompt`: extractor,
+     the default, or swe_natural_extractor; prompts.SC_EXTRACTION_PROMPTS), passing the
      running registry of SCs detected so far in this pair and the immediately
      preceding assistant turn.
   3. Append new `text` items to the pair's registry.
@@ -24,8 +26,8 @@ from __future__ import annotations
 import gc
 import json
 import random
-import re
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -36,14 +38,16 @@ from tqdm.auto import tqdm
 
 from compaction_integrity.dataset.eval_loader import EvalDatasetLoader, EvalDatasetRow
 from compaction_integrity.prompts import (
+    SC_EXTRACTION_PROMPTS,
     build_retention_judge_prompts,
-    build_sc_extraction_prompts,
+    sentence_windows,
 )
 from compaction_integrity.runtime.env import apply_runtime_environment
 from compaction_integrity.runtime.openai_runtime import OpenAIRuntime
 from compaction_integrity.runtime.vllm_runtime import VLLMRuntime
 from compaction_integrity.runtime.vllm_serve_runtime import VLLMServeRuntime
-from compaction_integrity.scripts.eval_run_layout import (
+from compaction_integrity.sc_extractor import evidence_in_turn, parse_extractor_output
+from compaction_integrity.eval_run_layout import (
     _content_hash,
     _load_dataset_manifest_identity,
     resolve_evaluator_cfg,
@@ -65,13 +69,6 @@ _EXTRACTION_COLUMNS = [
     "registry", "registry_text", "per_turn",
 ]
 _JUDGMENT_COLUMNS = _EXTRACTION_COLUMNS + ["retention", "retention_raw"]
-
-_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 def _flatten(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     out: dict[str, Any] = {}
@@ -106,42 +103,6 @@ def _render_registry(registry: list[dict[str, Any]]) -> str:
     return "\n".join(f"{i}. {e['text']}" for i, e in enumerate(registry, start=1))
 
 
-def _parse_extractor_output(raw: str) -> list[dict[str, str]]:
-    text = (raw or "").strip()
-    if not text:
-        return []
-    # Try in order: fenced JSON; the trailing `{...}` block (reasoning models
-    # often emit prose then JSON); the whole text.
-    candidates: list[str] = []
-    match = _JSON_FENCE_RE.search(text)
-    if match is not None:
-        candidates.append(match.group(1).strip())
-    last_open = text.rfind("{")
-    last_close = text.rfind("}")
-    if last_open != -1 and last_close > last_open:
-        candidates.append(text[last_open : last_close + 1])
-    candidates.append(text)
-    data: Any = None
-    for candidate in candidates:
-        try:
-            data = json.loads(candidate)
-            break
-        except json.JSONDecodeError:
-            continue
-    if data is None:
-        return []
-    items = data.get("scs", []) if isinstance(data, dict) else []
-    out: list[dict[str, str]] = []
-    for item in items if isinstance(items, list) else []:
-        if not isinstance(item, dict):
-            continue
-        sc_text = item.get("text")
-        if not isinstance(sc_text, str) or not sc_text.strip():
-            continue
-        out.append({"text": sc_text.strip(), "evidence": str(item.get("evidence", "")).strip()})
-    return out
-
-
 def _parse_retention_output(text: str) -> bool | None:
     n = (text or "").strip().upper()
     if n.startswith("YES"):
@@ -162,15 +123,10 @@ def _build_extractor_runtime(model: str, provider: str, kwargs: dict[str, Any]) 
     raise ValueError(f"Unsupported provider={provider} for SC extractor.")
 
 
-# ---------------------------------------------------------------------------
-# Per-pair scratch state
-#
 # Registry growth is sequential within a pair (turn N+1's prompt includes the
-# registry produced through turn N). We batch across pairs at the same
+# registry produced through turn N). Calls are batched across pairs at the same
 # turn-step index for vLLM throughput, so each pair carries its own state
 # across step iterations.
-# ---------------------------------------------------------------------------
-
 @dataclass
 class _PairState:
     meta: dict[str, Any]
@@ -178,6 +134,8 @@ class _PairState:
     user_turn_indices: list[int]
     registry: list[dict[str, Any]]
     per_turn: list[dict[str, Any]]
+    # One extraction step each: (user turn index, text read), set by the extraction phase.
+    units: list[tuple[int, str]] = field(default_factory=list)
 
 
 def _build_pair_states(
@@ -193,14 +151,24 @@ def _build_pair_states(
     inject_rng = random.Random(global_seed)
     states: list[_PairState] = []
     for row in rows:
-        for sssc in SSSCS:
-            injected = _inject_sssc(
-                list(row.messages),
-                sssc_text=str(sssc["sssc"]),
-                sssc_attrs=sssc_attrs,
-                inject_rng=inject_rng,
-            )
-            user_indices = [i for i, m in enumerate(injected) if m["role"] == "user"]
+        # Natural-SC rows (COMPINT-SWE-Natural) carry their own SC in the history,
+        # mirroring evaluation._build_pairs.
+        ssscs = [row.sssc] if row.sssc is not None else SSSCS
+        for sssc in ssscs:
+            if row.sssc is not None:
+                injected = list(row.messages)
+                # The issue is the trace's only user query; later "user" turns are
+                # tool observations flattened into the user role, which a deployed
+                # extractor (invoked per user query) never sees.
+                user_indices = [row.user_turn_indices()[0]]
+            else:
+                injected = _inject_sssc(
+                    list(row.messages),
+                    sssc_text=str(sssc["sssc"]),
+                    sssc_attrs=sssc_attrs,
+                    inject_rng=inject_rng,
+                )
+                user_indices = [i for i, m in enumerate(injected) if m["role"] == "user"]
             states.append(_PairState(
                 meta={
                     "dataset": dataset_name,
@@ -229,9 +197,7 @@ def _prev_assistant(messages: list[Message], turn_idx: int) -> str | None:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Phase 1: extraction (resumable)
-# ---------------------------------------------------------------------------
+# Phase 1: extraction (resumable).
 
 def _run_extraction_phase(
     *,
@@ -241,8 +207,13 @@ def _run_extraction_phase(
     save_path: Path,
     overwrite: bool,
 ) -> pd.DataFrame:
-    if overwrite and save_path.exists():
-        save_path.unlink()
+    # Pairs advance in lockstep, one user turn per step, so on a long dataset (WildChat:
+    # ~257 turns) none completes until the end. In-progress pairs are checkpointed here
+    # and resumed from the turn they reached.
+    partial_path = save_path.with_name("extraction_partial.pkl")
+    if overwrite:
+        save_path.unlink(missing_ok=True)
+        partial_path.unlink(missing_ok=True)
 
     done: dict[str, dict[str, Any]] = {}
     if save_path.exists():
@@ -251,6 +222,13 @@ def _run_extraction_phase(
         print(f"Resume: {len(done)} pair(s) already in {save_path}")
 
     pending = [s for s in states if _pair_key(s.meta) not in done]
+    if partial_path.exists():
+        partial = pd.read_pickle(partial_path)
+        for s in pending:
+            if _pair_key(s.meta) in partial:
+                s.registry = partial[_pair_key(s.meta)]["registry"]
+                s.per_turn = partial[_pair_key(s.meta)]["per_turn"]
+        print(f"Resume: {len(partial)} in-progress pair(s) from {partial_path}")
     if not pending:
         print(f"Extraction already complete for {dataset_name} ({len(states)} pairs).")
         return _persist(list(done.values()), _EXTRACTION_COLUMNS, save_path)
@@ -258,30 +236,46 @@ def _run_extraction_phase(
     print(f"Extraction: dataset={dataset_name} pending={len(pending)}/{len(states)}")
 
     raw_kwargs = dict(extractor_cfg.get("kwargs", {}))
-    # batch_size only gates how often we flush the checkpoint pickle; vLLM
-    # schedules internally. Default = no manual chunking (one flush per step).
+    build_sc_extraction_prompts = SC_EXTRACTION_PROMPTS[extractor_cfg.get("prompt", "extractor")]
+    # `window_sentences`: each user turn is read as consecutive windows of that many
+    # sentences (SWE-Natural issues), one step each. A window sees the registry from
+    # earlier turns only: shown its own turn's items, the model drops new SCs as well.
+    window = extractor_cfg.get("window_sentences")
+    for s in pending:
+        s.units = [
+            (i, text)
+            for i in s.user_turn_indices
+            for text in (sentence_windows(s.messages[i]["content"], int(window)) if window else [s.messages[i]["content"]])
+        ]
+    verify_evidence = bool(extractor_cfg.get("verify_evidence", False))
+    # batch_size only chunks each step's batch_generate calls; vLLM schedules
+    # internally. Default: no manual chunking (one call per step).
     batch_size = raw_kwargs.get("batch_size")
     extractor = _build_extractor_runtime(
         str(extractor_cfg["model"]), str(extractor_cfg["provider"]), raw_kwargs,
     )
 
-    max_steps = max((len(s.user_turn_indices) for s in pending), default=0)
-    total_calls = sum(len(s.user_turn_indices) for s in pending)
-    bar = tqdm(total=total_calls, desc=f"SC extraction ({dataset_name})",
-               unit="turn", dynamic_ncols=True)
+    max_steps = max((len(s.units) for s in pending), default=0)
+    total_calls = sum(len(s.units) for s in pending)
+    bar = tqdm(total=total_calls, initial=sum(len(s.per_turn) for s in pending),
+               desc=f"SC extraction ({dataset_name})", unit="turn", dynamic_ncols=True)
+    last_checkpoint = time.monotonic()
 
     try:
         for step in range(max_steps):
-            active = [s for s in pending if step < len(s.user_turn_indices)]
+            active = [
+                s for s in pending
+                if len(s.per_turn) == step and step < len(s.units)
+            ]
             if not active:
                 continue
 
             convos: list[list[Message]] = []
             for s in active:
-                turn_idx = s.user_turn_indices[step]
+                turn_idx, text = s.units[step]
                 sys_p, user_p = build_sc_extraction_prompts(
-                    user_turn=s.messages[turn_idx]["content"],
-                    existing_scs=[e["text"] for e in s.registry],
+                    user_turn=text,
+                    existing_scs=[e["text"] for e in s.registry if e["source_turn_index"] != turn_idx],
                     prev_assistant_turn=_prev_assistant(s.messages, turn_idx),
                 )
                 convos.append([
@@ -295,25 +289,31 @@ def _run_extraction_phase(
                 outputs = extractor.batch_generate(convos[start:end])
                 for s, response in zip(active[start:end], outputs):
                     raw = (response.text or "").strip()
-                    parsed = _parse_extractor_output(raw)
+                    turn_idx, text = s.units[step]
+                    parsed = parse_extractor_output(raw)
+                    dropped: list[dict[str, str]] = []
+                    if verify_evidence:
+                        dropped = [i for i in parsed if not evidence_in_turn(i["evidence"], text)]
+                        parsed = [i for i in parsed if evidence_in_turn(i["evidence"], text)]
                     seen = {e["text"] for e in s.registry}
                     added: list[dict[str, str]] = []
                     for item in parsed:
                         if item["text"] in seen:
                             continue
-                        s.registry.append({**item, "source_turn_index": s.user_turn_indices[step]})
+                        s.registry.append({**item, "source_turn_index": turn_idx})
                         added.append(item)
                         seen.add(item["text"])
                     s.per_turn.append({
-                        "turn_index": s.user_turn_indices[step],
+                        "turn_index": turn_idx,
                         "raw_output": raw,
                         "added": added,
+                        "dropped_unverified": dropped,
                     })
                     bar.update(1)
 
             # Persist completed pairs incrementally so a crash mid-run resumes.
             for s in active:
-                if len(s.per_turn) == len(s.user_turn_indices):
+                if len(s.per_turn) == len(s.units):
                     done[_pair_key(s.meta)] = {
                         **s.meta,
                         "num_extractions": sum(len(t["added"]) for t in s.per_turn),
@@ -322,6 +322,17 @@ def _run_extraction_phase(
                         "per_turn": list(s.per_turn),
                     }
             _persist(list(done.values()), _EXTRACTION_COLUMNS, save_path)
+            if time.monotonic() - last_checkpoint > 120:
+                pd.to_pickle(
+                    {
+                        _pair_key(s.meta): {"registry": s.registry, "per_turn": s.per_turn}
+                        for s in pending
+                        if _pair_key(s.meta) not in done
+                    },
+                    partial_path,
+                )
+                last_checkpoint = time.monotonic()
+        partial_path.unlink(missing_ok=True)
     finally:
         bar.close()
         close = getattr(extractor, "close", None)
@@ -334,9 +345,7 @@ def _run_extraction_phase(
     return df
 
 
-# ---------------------------------------------------------------------------
-# Phase 2: retention judgment (resumable)
-# ---------------------------------------------------------------------------
+# Phase 2: retention judgment (resumable).
 
 def _run_judgment_phase(
     *,
@@ -402,10 +411,6 @@ def _run_judgment_phase(
     return df
 
 
-# ---------------------------------------------------------------------------
-# Stats
-# ---------------------------------------------------------------------------
-
 def _print_stats(dataset_name: str, judgment_df: pd.DataFrame) -> None:
     n = len(judgment_df)
     if n == 0:
@@ -430,11 +435,7 @@ def _print_stats(dataset_name: str, judgment_df: pd.DataFrame) -> None:
     )
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-@hydra.main(version_base=None, config_path="../../../config/experiments/rq4", config_name=None)
+@hydra.main(version_base=None, config_path="../../../config/tasks/sc_extractor", config_name=None)
 def main(cfg: DictConfig) -> None:
     apply_runtime_environment()
 

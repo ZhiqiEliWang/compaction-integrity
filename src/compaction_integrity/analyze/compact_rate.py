@@ -1,5 +1,3 @@
-# stats for results from run_compactor_ablation
-
 import argparse
 from pathlib import Path
 import sys
@@ -21,16 +19,6 @@ from compaction_integrity.analyze.utils import (
 )
 from compaction_integrity.tokenization import count_tokens_messages_batch
 
-
-"""
-evaluation_results.pkl has the following columns:
-- dataset, dataset_path, source_row_index
-- sssc_id, sssc_type, sssc_message, sssc_probe, sssc_attrs
-- probe, compactor, evaluator
-- full_with_sssc_messages
-- compacted_context, compaction_status, compaction_error
-- compacted_compliant, retention
-"""
 
 SETTING_COLUMN = "context_length"
 TOKEN_COUNT_BATCH_SIZE = 256

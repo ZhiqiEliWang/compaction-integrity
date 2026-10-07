@@ -17,9 +17,7 @@ class ModelRuntime(ABC):
 
     @staticmethod
     def _normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """
-        normalize messages to a standard format with "role" and "content" keys.
-        """
+        """Normalize messages to {"role", "content"} dicts."""
         role_map = {
             "human": "user",
             "user": "user",

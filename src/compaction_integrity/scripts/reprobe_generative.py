@@ -29,7 +29,7 @@ from compaction_integrity.runtime.env import apply_runtime_environment
 from compaction_integrity.runtime.openai_runtime import OpenAIRuntime
 from compaction_integrity.runtime.vllm_runtime import VLLMRuntime
 from compaction_integrity.runtime.vllm_serve_runtime import VLLMServeRuntime
-from compaction_integrity.scripts.eval_run_layout import build_run_id, to_container, write_run_metadata
+from compaction_integrity.eval_run_layout import build_run_id, to_container, write_run_metadata
 from compaction_integrity.sssc import probe_to_user_prompt
 
 

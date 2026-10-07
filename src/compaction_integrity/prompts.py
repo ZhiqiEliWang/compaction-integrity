@@ -1,4 +1,5 @@
 # This file contains all prompts used in the project.
+import re
 from textwrap import dedent
 
 
@@ -657,6 +658,109 @@ def build_sc_extraction_prompts(
     ).strip()
 
     return system_prompt, user_prompt
+
+
+_SENTENCE_END_RE = re.compile(r"(?<=[.!?])\s+")
+# A line holding only a markup tag (<issue_description>, </uploaded_files>) carries no sentence.
+_TAG_LINE_RE = re.compile(r"^\s*</?[\w-]+>\s*$")
+
+
+def split_sentences(text: str) -> list[tuple[bool, str]]:
+    """The text in order as (is_sentence, segment): lines split at sentence ends. Fenced
+    code blocks and tag-only lines are kept whole as non-sentences; blank lines are dropped."""
+    out: list[tuple[bool, str]] = []
+    code: list[str] | None = None
+    for line in text.split("\n"):
+        if line.strip().startswith("```"):
+            if code is None:
+                code = [line]
+            else:
+                out.append((False, "\n".join(code + [line])))
+                code = None
+            continue
+        if code is not None:
+            code.append(line)
+            continue
+        if _TAG_LINE_RE.match(line):
+            out.append((False, line.strip()))
+            continue
+        out.extend((True, s.strip()) for s in _SENTENCE_END_RE.split(line) if s.strip())
+    if code is not None:
+        out.append((False, "\n".join(code)))
+    return out
+
+
+def sentence_windows(text: str, size: int) -> list[str]:
+    """Consecutive runs of `size` sentences; non-sentence segments stay with the sentence before them."""
+    out: list[str] = []
+    cur: list[str] = []
+    n = 0
+    for is_sentence, seg in split_sentences(text):
+        if is_sentence and n == size:
+            out.append("\n".join(cur))
+            cur, n = [], 0
+        cur.append(seg)
+        n += is_sentence
+    if cur:
+        out.append("\n".join(cur))
+    return out or [text]
+
+
+def build_swe_natural_sc_extraction_prompts(
+    user_turn: str,
+    existing_scs: list[str] | None = None,
+    prev_assistant_turn: str | None = None,
+) -> tuple[str, str]:
+    """
+    SC detection for a task handed to the agent (SWE-Natural: a GitHub issue),
+    which the caller reads in sentence windows (`window_sentences`).
+
+    Here an SC is the task author's restriction on how the work is done, stated
+    inside the task without a scope marker: scope, compatibility, method,
+    preservation, coordination, and hedged opinions on the approach. The model
+    first copies the window's directive sentences ("candidates"), then keeps the
+    SCs among them; asked for the SC list directly, Qwen3.5-9B returns it empty
+    for SCs inside an issue. Requirements on the content or form of the requested
+    output are not SCs, and recorded constraints are skipped even when reworded.
+    Same "scs" output schema as build_sc_extraction_prompts.
+    """
+    system_prompt = dedent(
+        """
+        You extract side constraints (SCs) from a user message. An SC is a restriction the user (or the author of a task they hand over, such as an issue) endorses on HOW the work is done, separate from the task itself. It may limit:
+        - scope: leave unrelated behavior alone, limit changes to one place, what is out of scope;
+        - compatibility: what must keep working;
+        - method: an approach or option they prefer or rule out;
+        - preservation: information or artifacts to keep;
+        - coordination: approvals, separate PRs, people to notify;
+        - the assistant's own conduct: actions it may take, what it may disclose, checks before answering, how all its replies look (not only the one requested).
+        Hedged suggestions ("ideally", "I'd prefer", "I don't think we should") count. "From now on" is not required.
+        Not SCs: the main goal or what defines its success; requirements on the content or form of the requested output (what it must include or cover, its subject, plot, features, style, format, length, language), even when phrased with must, never or only, unless the user says they hold for all later replies; descriptions of failures or how to reproduce them, background, and requests about the next reply only (such as "stop and give your final answer now"). List each constraint once, and skip any that a recorded constraint already covers, even in other words.
+
+        Read the message one sentence at a time and ask of each: does it say how the work should or should not be done (what to leave alone, keep working, avoid, prefer, preserve, check, or coordinate), rather than what the task is, what the requested output must contain, what goes wrong, or why? Every sentence where the answer is yes gives an SC.
+
+        Work in two steps inside one JSON object. First, under "candidates", copy every sentence of the message that says what should or should not be done, kept, changed, avoided, preferred, or checked, including sentences inside problem descriptions. Then, under "scs", keep the candidates that are SCs. Return only JSON: {"candidates": ["<sentence copied from the message>"], "scs": [{"text": "<the rule as one general sentence>", "evidence": "<exact words from the message>"}]}.
+        """
+    ).strip()
+
+    listed = "\n".join(f"{i}. {s}" for i, s in enumerate(existing_scs or [], start=1)) or "(none)"
+    prev_block = (
+        ""
+        if prev_assistant_turn is None
+        else f"<previous_assistant_message>\n{prev_assistant_turn}\n</previous_assistant_message>\n\n"
+    )
+    user_prompt = (
+        f"Recorded constraints:\n{listed}\n\n{prev_block}<user_message>\n{user_turn}\n</user_message>\n\n"
+        "List the side constraints stated in the user message above that the recorded constraints do not already "
+        "cover, even in other words. Do not reply to it or carry it out. Return only JSON."
+    )
+    return system_prompt, user_prompt
+
+
+# Selected by the extractor config's `prompt` key.
+SC_EXTRACTION_PROMPTS = {
+    "extractor": build_sc_extraction_prompts,
+    "swe_natural_extractor": build_swe_natural_sc_extraction_prompts,
+}
 
 
 def _format_existing_scs(existing_scs: list[str] | None) -> str:

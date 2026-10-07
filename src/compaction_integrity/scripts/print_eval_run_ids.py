@@ -10,7 +10,7 @@ from pathlib import Path
 
 from omegaconf import OmegaConf
 
-from compaction_integrity.scripts.eval_run_layout import (
+from compaction_integrity.eval_run_layout import (
     build_run_id,
     build_run_spec,
     normalize_compactors_container,
@@ -41,9 +41,8 @@ def enumerate_outputs(cfg_path: Path) -> list[dict[str, str]]:
     if "probe" in cfg:
         probe_container = normalize_probe_container(cfg.probe)
     elif retention_rate_only:
-        # Match evaluation.py: in retention-only mode the probe is unused but
-        # we still need one iteration to drive the per-compactor loop and
-        # produce stable run_ids.
+        # In retention-only mode the probe is unused, but one iteration still
+        # drives the per-compactor loop and yields stable run_ids.
         probe_container = {
             "no_probe": {"model": "n/a", "provider": "n/a", "kwargs": {}}
         }

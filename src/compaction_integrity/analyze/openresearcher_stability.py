@@ -64,7 +64,7 @@ from compaction_integrity.analyze.utils import (  # noqa: E402
     ordered_compactor_labels,
     tee_stdout,
 )
-from compaction_integrity.viz_config import save_fig, set_paper_style, set_talk_style  # noqa: E402
+from compaction_integrity.viz_config import HEATMAP_CMAP, PALETTE, save_fig, set_paper_style, set_talk_style  # noqa: E402
 
 
 METRICS = [
@@ -264,7 +264,7 @@ def _plot_disagreement_heatmap(summary_df: pd.DataFrame, output_dir: Path) -> No
         pivot,
         annot=True,
         fmt=".3f",
-        cmap="rocket_r",
+        cmap=HEATMAP_CMAP,
         vmin=0,
         vmax=max(0.25, float(plot_df["mean_abs_deviation"].max())),
         linewidths=0.5,
@@ -290,7 +290,7 @@ def _plot_retention_disagreement(summary_df: pd.DataFrame, output_dir: Path) -> 
         x="mean_abs_deviation",
         y="compactor_name_label",
         order=compactor_order,
-        color="#4C78A8",
+        color=PALETTE[0],
         ax=ax,
     )
     ax.set_xlabel("Retention Disagreement Rate")
@@ -319,7 +319,7 @@ def _plot_rate_delta(summary_df: pd.DataFrame, output_dir: Path) -> None:
         pivot,
         annot=True,
         fmt=".3f",
-        cmap="mako_r",
+        cmap=HEATMAP_CMAP,
         vmin=0,
         vmax=max(0.05, float(plot_df["rate_delta_abs"].max())),
         linewidths=0.5,

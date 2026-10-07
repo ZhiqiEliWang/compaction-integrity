@@ -1,0 +1,293 @@
+{
+  "rubric_version": "0.1-draft",
+  "source_file": "manual_sc_annotations.csv",
+  "source_sha256": "b657c4cc00270e1defca9438e9c6c84e496ad51e46cb92338a86641e52525ff7",
+  "source_rows": 208,
+  "source_annotation_fields_empty": true,
+  "seed": 20260905,
+  "random_selection_algorithm": "random.Random(20260905).sample(range(208), 10); zero-based CSV data record positions, not physical line numbers",
+  "random_zero_based_record_indices": [
+    150,
+    69,
+    21,
+    183,
+    148,
+    131,
+    80,
+    121,
+    26,
+    200
+  ],
+  "targeted_zero_based_record_indices": [
+    0,
+    1,
+    8,
+    31,
+    32,
+    38,
+    52,
+    67,
+    71,
+    126,
+    134,
+    135,
+    166,
+    178,
+    186
+  ],
+  "calibration_count": 25,
+  "control_count": 20,
+  "proposal_provenance": "Single-assistant draft after reading the complete issue text for each selected record. No independent annotators or human adjudication have been run.",
+  "records": [
+    {
+      "calibration_id": "CAL-01",
+      "annotation_id": "numba__numba-6265::p2",
+      "source_data_record_number": 151,
+      "selection": "random",
+      "selection_focus": "Compiler-error keyword false positive",
+      "candidate_sha256": "342901280090137675a789b4a1baed70d9ce74761615eb36c6f10cbf97d17d9c",
+      "issue_sha256": "7ba36d209470223f1a59673f7ed48e6faa9e005973fd0d924db26a6d6b2d4bac",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-02",
+      "annotation_id": "jackdewinter__pymarkdown-1248::p23",
+      "source_data_record_number": 70,
+      "selection": "random",
+      "selection_focus": "Expected behavior versus an ancillary constraint",
+      "candidate_sha256": "effbb3167c50796545a3e0bc7367ae1509c8783aaa19ba14aaadcb397aaee77e",
+      "issue_sha256": "835ba03c27b72aa099c3910f33d2bbbdd486e52e98ac95ccdbec159a000f64e6",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-03",
+      "annotation_id": "streamlink__streamlink-5725::p5",
+      "source_data_record_number": 22,
+      "selection": "random",
+      "selection_focus": "Descriptive cannot statement",
+      "candidate_sha256": "b64e33f4f5ab1ffaca314db289a12b8bf057b112980deaf0ec46be14a02c1283",
+      "issue_sha256": "baac2e72f63c1089d3af91b9bb72d587874ecf972fc0a7c37f58b2ba9cf5857d",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-04",
+      "annotation_id": "rthalley__dnspython-255::p0",
+      "source_data_record_number": 184,
+      "selection": "random",
+      "selection_focus": "Technical directive terminology versus a user directive",
+      "candidate_sha256": "4715c1756b5696c012f44f40915c5e02ceb8bdb14b9ab59d2e79602d26b897d5",
+      "issue_sha256": "2be502b4f582a50ad5fef5238a16b3bcc7221deb32dcb1052d0c711fcd0438b0",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-05",
+      "annotation_id": "wemake-services__wemake-python-styleguide-1649::p3",
+      "source_data_record_number": 149,
+      "selection": "random",
+      "selection_focus": "Soft preference and scoped-exception boundary",
+      "candidate_sha256": "01f4df676a1592ff90c78dda71d171343e87b220d288cdaa89563e14ca00ed72",
+      "issue_sha256": "8b4bdbf93889ac5c1fa2437302b19876a3b9d138eb518cf547e56cd968c1d341",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-06",
+      "annotation_id": "mhostetter__galois-393::p0",
+      "source_data_record_number": 132,
+      "selection": "random",
+      "selection_focus": "A direct main-task request mixed with error text",
+      "candidate_sha256": "02bf8810a087fe7e92846d20dcae07e314338ce80d46f6e010729a497052d456",
+      "issue_sha256": "b4fef21579d22ca5e6a520c776fd0b9dac98adfe3f0d397bd94a6fd6cafe70b9",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-07",
+      "annotation_id": "dask__dask-4207::p1",
+      "source_data_record_number": 81,
+      "selection": "random",
+      "selection_focus": "Diagnosis mixed with a quoted error",
+      "candidate_sha256": "c9a3cfada1d9c423c4bc5300b5b9e293742c32c6f55361f71d014c784412d81f",
+      "issue_sha256": "5ad17ea4f9fe8bd0125d54b287492b809c7440092746fdfe5fb8e5fcc2c60512",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-08",
+      "annotation_id": "cdriehuys__django-simple-email-auth-26::p0",
+      "source_data_record_number": 122,
+      "selection": "random",
+      "selection_focus": "Email terminology in software versus agent actions",
+      "candidate_sha256": "d79b08d053a16e8f4f193a2e16263801b26a08d88a19e52c925bf1e5f9aa6443",
+      "issue_sha256": "a344f079f7a0cdac4ba3076901117ebc7e32bea80c1f2e50d44eb04912741c4a",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-09",
+      "annotation_id": "xCDAT__xcdat-653::p29",
+      "source_data_record_number": 27,
+      "selection": "random",
+      "selection_focus": "A quoted error with full enclosing context",
+      "candidate_sha256": "cbe6042d9c45cd57dd90fa6586546644b0001376d06358b668799908dbd33eff",
+      "issue_sha256": "dee3888d16ebfdf33b2a49d1a66bc10622d573ec8200a4732a34a936214d871c",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-10",
+      "annotation_id": "tefra__xsdata-1055::p0",
+      "source_data_record_number": 201,
+      "selection": "random",
+      "selection_focus": "A reproduction instruction embedded in descriptive prose",
+      "candidate_sha256": "90baa308399e9159588e2fcfff5f86866de470f4c02f35904a3d2398b5525e7d",
+      "issue_sha256": "e77844c720d48c906b4203f8c456e4879883299cdc8ba601546ae24933094bc7",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-11",
+      "annotation_id": "pytest-dev__pytest-asyncio-1029::p14",
+      "source_data_record_number": 1,
+      "selection": "targeted",
+      "selection_focus": "Software session scope and an epistemic negation",
+      "candidate_sha256": "13b444c922184afe40383e01e78b82faee1368716b7804b140c68a36729c2320",
+      "issue_sha256": "787c9afd180b29823f9ad4706f8adbcbf7830096aade02aa30e77ee98a9f143e",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-12",
+      "annotation_id": "nipy__nipype-2673::p3",
+      "source_data_record_number": 2,
+      "selection": "targeted",
+      "selection_focus": "Generic software invariant that is the main task",
+      "candidate_sha256": "612b7cec50a14bb3a897bf68a3daae2fedd326a0b8e54ea588282907f40ba364",
+      "issue_sha256": "6dbc7ea18fb63468f5c3ba35584951b9c48881dafceb9f36ad1b039e55df959b",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-13",
+      "annotation_id": "yt-dlp__yt-dlp-10531::p0",
+      "source_data_record_number": 9,
+      "selection": "targeted",
+      "selection_focus": "Issue-template instruction outside a code fence",
+      "candidate_sha256": "6a6c8bef9e1a32b86c9d78b77d40a075f5d1fe90245111ea09d0e43f87ca3f88",
+      "issue_sha256": "b06ce0cc1d73ad64e7d27fea0e7920d51b39715a5393b22adc08bf9e007574eb",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-14",
+      "annotation_id": "pypa__setuptools_scm-505::p17",
+      "source_data_record_number": 32,
+      "selection": "targeted",
+      "selection_focus": "Quoted diagnostic imperative",
+      "candidate_sha256": "33049fe79e231061d8b4e390cbc628b8c32f2ce1b5b805d6c849c4ad52156bc6",
+      "issue_sha256": "136f529374171b2564eeda696ce2e616dd0ba7bd4a39df04649f4760f3418c1d",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-15",
+      "annotation_id": "pypa__setuptools_scm-505::p21",
+      "source_data_record_number": 33,
+      "selection": "targeted",
+      "selection_focus": "Exact duplicate within the same issue; do not conflate deduplication with SC status",
+      "candidate_sha256": "33049fe79e231061d8b4e390cbc628b8c32f2ce1b5b805d6c849c4ad52156bc6",
+      "issue_sha256": "136f529374171b2564eeda696ce2e616dd0ba7bd4a39df04649f4760f3418c1d",
+      "duplicate_of": "pypa__setuptools_scm-505::p17"
+    },
+    {
+      "calibration_id": "CAL-16",
+      "annotation_id": "python-pillow__Pillow-5575::p5",
+      "source_data_record_number": 39,
+      "selection": "targeted",
+      "selection_focus": "Template boundaries beginning before the candidate",
+      "candidate_sha256": "ddd6bc66e68cc0126938190f744eb059c10ed9023163155a294fdbe9fe0c4f36",
+      "issue_sha256": "db66a71e045f32da0bed61f53149f4e35f2bc04c1042589fcc9012d6f9622651",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-17",
+      "annotation_id": "spacetelescope__jwst-7978::p5",
+      "source_data_record_number": 53,
+      "selection": "targeted",
+      "selection_focus": "Broad method constraint with lasting algorithmic effect",
+      "candidate_sha256": "e4c3e4f338296fac194c805157aad5c883f25150425851e960b7e240da52fb9c",
+      "issue_sha256": "34db9f954d8cafd57a010f29ad4f77b3e072e7a9a581c708b553b02b9cfadbbf",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-18",
+      "annotation_id": "canonical__charmcraft-1892::p8",
+      "source_data_record_number": 68,
+      "selection": "targeted",
+      "selection_focus": "Generic persistent repository guidance inside source code",
+      "candidate_sha256": "b218f973cb629e62b6c35448d76f1bfe2b1591b1ac1231b3ea9e73e4cd80f9d6",
+      "issue_sha256": "05064dfee07e11c91dbaac4aaa2f3f691d951e089c4a01181bace96efb58c3c7",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-19",
+      "annotation_id": "pdm-project__pdm-2909::p3",
+      "source_data_record_number": 72,
+      "selection": "targeted",
+      "selection_focus": "Generated-file warning mistaken for an agent instruction",
+      "candidate_sha256": "890b26772f5ec509179fe1bd888f84f6588495a7e9ce43c5af16c069a0471ca4",
+      "issue_sha256": "76b9155c1ac0501c13521659a1ee4c2c64d5e536ea4fc55ad340911ff87526ac",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-20",
+      "annotation_id": "hhatto__autopep8-466::p7",
+      "source_data_record_number": 127,
+      "selection": "targeted",
+      "selection_focus": "Main-task non-interference versus an ancillary preservation rule",
+      "candidate_sha256": "b231ae6a80b25fe11f3a09c9e38c3ca90faf0dcebc14bfb54aa41d039c12b65a",
+      "issue_sha256": "cfcf31eef730b2fc670499b77cca34987ba903055b73f3e8c0ccaef0bca8c241",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-21",
+      "annotation_id": "ModellingWebLab__cellmlmanip-209::p1",
+      "source_data_record_number": 135,
+      "selection": "targeted",
+      "selection_focus": "Multiple directives in one paragraph, including a broad ancillary restriction",
+      "candidate_sha256": "1b6ad92b6a7e86e49001de863a6b0ae7d295a7f00dce5e683ef03ddd2f57e8fd",
+      "issue_sha256": "a44a67fd446c57e520b353c4fdba96288eca32681a176ed184bbdae5315b366f",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-22",
+      "annotation_id": "ModellingWebLab__cellmlmanip-209::p3",
+      "source_data_record_number": 136,
+      "selection": "targeted",
+      "selection_focus": "Soft conditional priority instruction with episodic scope",
+      "candidate_sha256": "feee74e6f81d20005362675c0f2bb1b613c3bc4bdfa5edc793324034b4c9eb12",
+      "issue_sha256": "a44a67fd446c57e520b353c4fdba96288eca32681a176ed184bbdae5315b366f",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-23",
+      "annotation_id": "smarkets__marge-bot-46::p2",
+      "source_data_record_number": 167,
+      "selection": "targeted",
+      "selection_focus": "Target-bot process versus annotating-agent process",
+      "candidate_sha256": "651e541d79c9bbb9ba1aff9bf4cd163b06586865c1e7d27b6c34bd8cf2b188ba",
+      "issue_sha256": "4e7827d2bd8444796f92005a71b45dcf1b905ccae3e7dba77824c9c3a981625e",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-24",
+      "annotation_id": "astarte-platform__astarte-device-sdk-python-198::p1",
+      "source_data_record_number": 179,
+      "selection": "targeted",
+      "selection_focus": "One-time non-interference instruction in a reproducer",
+      "candidate_sha256": "56f5dbbe1989cea73be6cb62f7b2fa040efe912a9ef5f490805c50d5c3dea5e0",
+      "issue_sha256": "42e71cd7c4a7464b9f85648983bae09d20c40eb917e83ae8817b76bc3af42f67",
+      "duplicate_of": null
+    },
+    {
+      "calibration_id": "CAL-25",
+      "annotation_id": "plone__mr.roboto-123::p3",
+      "source_data_record_number": 187,
+      "selection": "targeted",
+      "selection_focus": "Ancillary one-time notification versus generic approval rule",
+      "candidate_sha256": "c20afda84d16831a1a46306fa9d774c466b0782d3bc837349d044a9095631bb7",
+      "issue_sha256": "933412e212493b329e03dab1eea302355e42c2bd086032f9dbfe99700208cab0",
+      "duplicate_of": null
+    }
+  ]
+}

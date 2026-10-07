@@ -15,9 +15,10 @@ import seaborn as sns
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq2/injection_positions.yaml"
+DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq3/injection_positions.yaml"
 
 from compaction_integrity.analyze.utils import (
+    COMPACTOR_LABEL_COLORS,
     COMPACTOR_NAME_ORDER,
     extract_compactor_name,
     extract_context_length,
@@ -29,7 +30,7 @@ from compaction_integrity.analyze.utils import (
     ordered_values,
     tee_stdout,
 )
-from compaction_integrity.viz_config import save_fig, set_paper_style, set_talk_style
+from compaction_integrity.viz_config import HEATMAP_CMAP, save_fig, set_paper_style, set_talk_style
 
 
 POSITION_ORDER = ["top", "middle", "bottom"]
@@ -137,6 +138,7 @@ def _plot_individual_retention_by_position(
                 y="retention_rate",
                 hue="compactor_name_label",
                 hue_order=compactor_order,
+                palette=COMPACTOR_LABEL_COLORS,
                 order=POSITION_ORDER,
                 ax=ax,
             )
@@ -160,7 +162,7 @@ def _abbreviate_row_label(dataset_label: str, compactor_label: str) -> str:
     paren_match = re.search(r"\(([^)]+)\)", compactor_label)
     compactor_base = re.sub(r"\s*\([^)]*\)\s*", "", compactor_label).strip()
     compactor_abbr = (
-        compactor_base.replace("gpt-oss", "GPT")
+        compactor_base.replace("gpt-oss", "oss")
         .replace("qwen3", "QWEN")
         .replace("Llmlingua2 T500", "Lingua")
         .replace("Recent 5", "R5")
@@ -194,34 +196,56 @@ def _plot_all_retention_by_position(
                 )
         heatmap_df = (
             plot_df.pivot(
-                index="dataset_compactor_label",
-                columns="position",
+                index="position",
+                columns="dataset_compactor_label",
                 values="retention_rate",
             )
-            .reindex(index=row_order, columns=POSITION_ORDER)
-            .rename(columns=POSITION_DISPLAY_LABELS)
+            .reindex(index=POSITION_ORDER, columns=row_order)
+            .rename(index=POSITION_DISPLAY_LABELS)
         )
-        n_rows = len(heatmap_df.index)
         heatmap_width = plt.rcParams["figure.figsize"][0]
-        heatmap_height = max(1.2, 0.22 * n_rows + 0.6)
+        heatmap_height = 0.22 * len(heatmap_df.index) + 1.0
         fig, ax = plt.subplots(figsize=(heatmap_width, heatmap_height))
         sns.heatmap(
-            heatmap_df,
+            heatmap_df * 100,
             ax=ax,
-            cmap="rocket_r",
+            cmap=HEATMAP_CMAP,
             vmin=0.0,
-            vmax=1.0,
+            vmax=100.0,
             annot=True,
-            fmt=".0%",
+            fmt=".0f",
             annot_kws={"fontsize": 7},
-            cbar_kws={"label": "Retention Rate", "format": PercentFormatter(1.0)},
+            cbar_kws={"label": "Retention (%)", "ticks": [0, 50, 100], "pad": 0.02},
             linewidths=0.4,
             linecolor="white",
         )
-        ax.set_xlabel("SC Injection Location")
-        ax.set_ylabel("")
+        dataset_labels = [label.split("/", 1)[0] for label in heatmap_df.columns]
+        ax.set_xticklabels([label.split("/", 1)[1] for label in heatmap_df.columns])
+        group_start = 0
+        for i in range(1, len(dataset_labels) + 1):
+            if i < len(dataset_labels) and dataset_labels[i] == dataset_labels[group_start]:
+                continue
+            ax.text(
+                (group_start + i) / 2,
+                1.03,
+                fmt_dataset_label(
+                    plot_df.loc[
+                        plot_df["dataset_compactor_label"] == heatmap_df.columns[group_start],
+                        "dataset_config",
+                    ].iloc[0]
+                ),
+                transform=ax.get_xaxis_transform(),
+                ha="center",
+                va="bottom",
+            )
+            if i < len(dataset_labels):
+                ax.axvline(i, color="white", linewidth=2.5)
+            group_start = i
+        ax.set_xlabel("")
+        ax.set_ylabel("Injection location")
         ax.tick_params(axis="y", rotation=0)
-        plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
+        ax.tick_params(axis="x", labelsize=8)
+        plt.setp(ax.get_xticklabels(), rotation=55, ha="right", rotation_mode="anchor")
         save_fig(
             output_dir / f"retention_rate_by_position_all__{_safe_name(str(context_length))}.pdf"
         )

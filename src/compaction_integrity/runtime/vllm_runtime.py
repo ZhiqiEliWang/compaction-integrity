@@ -13,6 +13,10 @@ def _get_gpt_oss_harmony_encoding() -> Any:
     return load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
 
 
+# Sampling knobs a config may set; absent ones keep vLLM's defaults.
+_SAMPLING_KEYS = ("temperature", "top_p", "top_k", "min_p", "repetition_penalty", "seed")
+
+
 class VLLMRuntime(ModelRuntime):
     def __init__(self, config: dict[str, Any]):
         super().__init__(config)
@@ -34,6 +38,8 @@ class VLLMRuntime(ModelRuntime):
                 "use_tqdm",
                 "env",
                 "enable_thinking",
+                "reasoning_effort",
+                *_SAMPLING_KEYS,
                 "truncate_prompt_tokens",
             }
         }
@@ -62,7 +68,7 @@ class VLLMRuntime(ModelRuntime):
     def _default_chat_template_kwargs(self, model: str) -> dict[str, Any] | None:
         """Build per-request chat_template_kwargs.
 
-        - gpt-oss models default to `reasoning_effort=low`.
+        - gpt-oss models default to `reasoning_effort=low`, overridable per config.
         - Any model can disable thinking via `enable_thinking: false` in the
           runtime config. For Qwen3 family this short-circuits the
           `<think>...</think>` prelude. See
@@ -70,7 +76,7 @@ class VLLMRuntime(ModelRuntime):
         """
         kwargs: dict[str, Any] = {}
         if "gpt-oss" in model.lower():
-            kwargs["reasoning_effort"] = "low"
+            kwargs["reasoning_effort"] = self.config.get("reasoning_effort", "low")
         if "enable_thinking" in self.config:
             kwargs["enable_thinking"] = bool(self.config["enable_thinking"])
         return kwargs or None
@@ -126,10 +132,9 @@ class VLLMRuntime(ModelRuntime):
     def _regex_extract_harmony_channels(decoded: str) -> dict[str, str]:
         """Best-effort recovery for malformed harmony streams.
 
-        Why: gpt-oss occasionally emits `<|start|>final<|message|>...` instead
+        gpt-oss occasionally emits `<|start|>final<|message|>...` instead
         of `<|start|>assistant<|channel|>final<|message|>...`, which the
-        harmony parser rejects. Falling back to regex lets evaluation
-        continue instead of failing the whole batch.
+        harmony parser rejects; the regex fallback avoids failing the whole batch.
         """
         channels: dict[str, list[str]] = {}
         pattern = re.compile(
@@ -179,10 +184,10 @@ class VLLMRuntime(ModelRuntime):
         return "\n\n".join(text for text in texts if text).strip()
 
     def _extract_harmony_response_text(self, messages: list[Any]) -> str:
-        """All assistant output the user/judge should see: every non-`analysis`
-        channel (typically `final` and/or `commentary`), preserving emission order.
-        gpt-oss may emit only a `commentary` tool-call when no `final` is produced;
-        we surface that as the response so the IF judge can score it."""
+        """Every non-`analysis` assistant channel, in emission order.
+
+        gpt-oss may emit only a `commentary` tool call with no `final`; it is
+        surfaced as the response so the IF judge can score it."""
         parts: list[str] = []
         for message in messages:
             if message.author.role != Role.ASSISTANT:
@@ -239,7 +244,7 @@ class VLLMRuntime(ModelRuntime):
             content = re.sub(r"<think>.*?</think>", "", raw_output, flags=re.DOTALL).strip()
             return thinking, content
 
-        if "</think>" in raw_output: # qwen style? 
+        if "</think>" in raw_output:  # <think> was opened by the chat template (e.g. Qwen)
             thinking_text, content = raw_output.split("</think>", 1)
             thinking = thinking_text.strip() or None
             return thinking, content.strip()
@@ -426,6 +431,10 @@ class VLLMRuntime(ModelRuntime):
         if "max_tokens" in self.config:
             sampling_config["max_tokens"] = int(self.config["max_tokens"])
 
+        for key in _SAMPLING_KEYS:
+            if key in self.config:
+                sampling_config[key] = self.config[key]
+
         if params is not None:
             unsupported = set(params) - {"max_tokens", "tools"}
             if unsupported:
@@ -518,7 +527,8 @@ class VLLMRuntime(ModelRuntime):
 def parse_output(text: str, role: str | None = None) -> dict[str, str]:
     """Parse formatted model output into a {channel: content} dict.
 
-    Handles the [channel_name]\\ncontent format produced by _format_for_log.
+    Handles the [channel_name]\\ncontent format produced by
+    scripts.evaluation._format_for_log.
     Unlabeled content (e.g. from non-gpt-oss models) is stored under 'text'.
 
     Args:

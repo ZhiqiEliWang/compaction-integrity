@@ -135,17 +135,16 @@ def main() -> None:
     parser.add_argument("--manifest_path", required=True, type=Path)
     parser.add_argument("--results_root", type=Path, default=Path("/data/compaction_integrity"))
     parser.add_argument("--out_dir", type=Path, default=None,
-                        help="Where to write the CSV (default: manifest dir).")
+                        help="Where to write the CSVs (default: <results_root>/analysis/prober_swap).")
     args = parser.parse_args()
 
     manifest = yaml.safe_load(args.manifest_path.read_text(encoding="utf-8"))
     runs = manifest["runs"]
     reference_run_id = str(manifest.get("reference_run_id", runs[0]["run_id"]))
     runs_dir = args.results_root / "runs"
-    out_dir = args.out_dir or args.manifest_path.parent
+    out_dir = args.out_dir or args.results_root / "analysis" / "prober_swap"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load every run's success rows.
     frames: dict[str, dict[str, Any]] = {}
     for entry in runs:
         run_id = str(entry["run_id"])
@@ -196,10 +195,9 @@ def main() -> None:
                 **comparison,
             })
 
-    # -- console table -----------------------------------------------------
     hdr = (f"{'prober':<22} {'n':>4} {'uninj':>6} {'inj':>6} {'compact':>7} "
            f"{'upper':>6} {'retain':>6} {'invalid':>7} {'agree':>6} {'kappa':>6}")
-    print(f"\nDifferent-prober MCQ comparison (compacted contexts held fixed)")
+    print("\nDifferent-prober MCQ comparison (compacted contexts held fixed)")
     print(f"reference prober: {frames[reference_run_id]['label']}\n")
     print(hdr)
     print("-" * len(hdr))
@@ -213,7 +211,6 @@ def main() -> None:
               f"{r['retention']:>6.3f} {r['compacted_invalid_rate']:>7.3f} "
               f"{agree_s:>6} {kappa_s:>6}")
 
-    # -- csv ---------------------------------------------------------------
     csv_path = out_dir / f"{args.manifest_path.stem}__prober_swap.csv"
     fieldnames = ["label", "run_id", "n_success", "uninjected_base", "injected_full",
                   "compacted", "post_sssc_upper", "retention", "compacted_invalid_rate",

@@ -3,13 +3,16 @@ from dataclasses import dataclass
 from typing import Any
 
 
-DEFAULT_HF_HOME = "/data/huggingface_cache"
-DEFAULT_VLLM_CACHE_ROOT = "/data/huggingface_cache"
+# Shared, group-writable cache for all users; the token stays per-user.
+DEFAULT_HF_HOME = "/data/huggingface"
+DEFAULT_HF_TOKEN_PATH = os.path.expanduser("~/.cache/huggingface/token")
+DEFAULT_VLLM_CACHE_ROOT = "/data/huggingface"
 
 
 @dataclass(frozen=True, slots=True)
 class RuntimeEnvironmentConfig:
     hf_home: str = DEFAULT_HF_HOME
+    hf_token_path: str = DEFAULT_HF_TOKEN_PATH
     vllm_cache_root: str = DEFAULT_VLLM_CACHE_ROOT
     vllm_worker_multiproc_method: str | None = None
 
@@ -24,6 +27,7 @@ def resolve_runtime_environment_config(
             return config
         return RuntimeEnvironmentConfig(
             hf_home=config.hf_home,
+            hf_token_path=config.hf_token_path,
             vllm_cache_root=config.vllm_cache_root,
             vllm_worker_multiproc_method=worker_multiproc_method,
         )
@@ -35,11 +39,13 @@ def resolve_runtime_environment_config(
             env_config = nested_env
 
     hf_home = DEFAULT_HF_HOME
+    hf_token_path = DEFAULT_HF_TOKEN_PATH
     vllm_cache_root = DEFAULT_VLLM_CACHE_ROOT
     vllm_worker_value = worker_multiproc_method
 
     if env_config is not None and hasattr(env_config, "get"):
         hf_home = str(env_config.get("hf_home") or hf_home)
+        hf_token_path = str(env_config.get("hf_token_path") or hf_token_path)
         vllm_cache_root = str(env_config.get("vllm_cache_root") or vllm_cache_root)
         configured_worker_value = env_config.get("vllm_worker_multiproc_method")
         if configured_worker_value is not None and worker_multiproc_method is None:
@@ -47,6 +53,7 @@ def resolve_runtime_environment_config(
 
     return RuntimeEnvironmentConfig(
         hf_home=hf_home,
+        hf_token_path=hf_token_path,
         vllm_cache_root=vllm_cache_root,
         vllm_worker_multiproc_method=vllm_worker_value,
     )
@@ -62,6 +69,7 @@ def apply_runtime_environment(
         worker_multiproc_method=worker_multiproc_method,
     )
     os.environ["HF_HOME"] = resolved.hf_home
+    os.environ["HF_TOKEN_PATH"] = resolved.hf_token_path
     os.environ["VLLM_CACHE_ROOT"] = resolved.vllm_cache_root
     if resolved.vllm_worker_multiproc_method is not None:
         os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = (

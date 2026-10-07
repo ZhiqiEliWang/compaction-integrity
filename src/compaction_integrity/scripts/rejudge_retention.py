@@ -46,10 +46,9 @@ from tqdm.auto import tqdm
 
 from compaction_integrity.api_keys import gemini_api_key, openai_api_key
 from compaction_integrity.prompts import build_retention_judge_prompts
-from compaction_integrity.scripts.eval_run_layout import build_run_id, write_run_metadata
+from compaction_integrity.eval_run_layout import build_run_id, write_run_metadata
 
-# Google's OpenAI-compatible endpoint. Gemini models are reachable through the
-# openai client by pointing base_url here and using chat.completions.
+# Google's OpenAI-compatible endpoint: Gemini via the openai client + chat.completions.
 GEMINI_OPENAI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 Message = dict[str, str]
@@ -79,10 +78,7 @@ def _omit_reasoning(reasoning_effort: str | None) -> bool:
     return reasoning_effort is None or reasoning_effort.strip().lower() in ("", "omit")
 
 
-# ---------------------------------------------------------------------------
-# Small helpers (re-implemented locally so we don't import evaluation.py, which
-# pulls in transformers/vllm).
-# ---------------------------------------------------------------------------
+# Helpers duplicated from evaluation.py, whose import pulls in transformers/vllm.
 
 def _flatten_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     flattened: dict[str, Any] = {}
@@ -122,10 +118,6 @@ def _wide_row_key(row: dict[str, Any]) -> str:
         ]
     )
 
-
-# ---------------------------------------------------------------------------
-# Judge
-# ---------------------------------------------------------------------------
 
 def _retry_after_seconds(exc: Exception) -> float | None:
     """Best-effort extract of a server-requested retry delay from a rate-limit
@@ -241,16 +233,11 @@ def _rejudge_dataframe(
     return verdicts
 
 
-# ---------------------------------------------------------------------------
-# Agreement
-# ---------------------------------------------------------------------------
-
 def _cohen_kappa(old: list[bool], new: list[bool]) -> float:
     n = len(old)
     if n == 0:
         return float("nan")
     po = sum(1 for a, b in zip(old, new) if a == b) / n
-    # Marginals over {True, False}.
     p_old_true = sum(1 for a in old if a) / n
     p_new_true = sum(1 for b in new if b) / n
     pe = p_old_true * p_new_true + (1 - p_old_true) * (1 - p_new_true)
@@ -288,10 +275,6 @@ def _agreement_stats(old_ret: list[bool | None], new_ret: list[bool | None]) -> 
         "cohen_kappa": _cohen_kappa(old_p, new_p),
     }
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def _load_manifest_run_ids(manifest_path: Path) -> list[tuple[str, str]]:
     manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
@@ -403,7 +386,6 @@ def main() -> None:
             f"       agree={stats['agree_rate']:.3f} kappa={stats['cohen_kappa']:.3f} "
             f"(n={stats['n_paired']})")
 
-    # -- run-id mapping log ------------------------------------------------
     ts = datetime.now(timezone.utc).isoformat()
     map_path = log_dir / f"rejudge_run_map__{args.new_evaluator_name}.txt"
     with map_path.open("w", encoding="utf-8") as f:
@@ -419,7 +401,6 @@ def main() -> None:
             f.write(f"  new_path:   {m['new_path']}\n\n")
     print(f"\nWrote run-id map -> {map_path}")
 
-    # -- agreement report --------------------------------------------------
     overall = _agreement_stats(all_old, all_new)
     agree_txt = log_dir / f"agreement__{args.new_evaluator_name}.txt"
     with agree_txt.open("w", encoding="utf-8") as f:
@@ -432,7 +413,7 @@ def main() -> None:
         f.write(f"old retain rate    : {overall['old_retain_rate']:.4f}\n")
         f.write(f"new retain rate    : {overall['new_retain_rate']:.4f}\n")
         f.write("confusion (old \\ new):\n")
-        f.write(f"                new=RETAIN   new=DROP\n")
+        f.write("                new=RETAIN   new=DROP\n")
         f.write(f"  old=RETAIN    {overall['old_true_new_true']:>10d}  {overall['old_true_new_false']:>9d}\n")
         f.write(f"  old=DROP      {overall['old_false_new_true']:>10d}  {overall['old_false_new_false']:>9d}\n\n")
         f.write("== PER RUN ==\n")

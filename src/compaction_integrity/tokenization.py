@@ -1,6 +1,6 @@
-# Tokenizer for evaluating context length.
-# Note that in evaluation, each model/agent use its own tokenizer.
+# Tokenizer for measuring context length; evaluated models/agents use their own tokenizers.
 
+import json
 import os
 from functools import lru_cache
 from typing import Any
@@ -21,7 +21,7 @@ def _get_hf_tokenizer() -> Any:
         raise RuntimeError(
             f"Failed to load tokenizer '{_TOKENIZER_MODEL}'. "
             "Install transformers and ensure tokenizer files are available."
-        )
+        ) from exc
 
 
 def _count_tokens_texts(texts: list[str]) -> list[int]:
@@ -42,10 +42,21 @@ def count_tokens_text(text: str) -> int:
     return _count_tokens_texts([text])[0]
 
 
+def _tool_call_text(message: dict[str, Any]) -> str:
+    """Agent traces carry tool calls beside ``content``, not inside it."""
+    tool_calls = message.get("tool_calls_json") or message.get("tool_calls") or ""
+    if isinstance(tool_calls, str):
+        return tool_calls
+    return json.dumps(tool_calls)
+
+
+def _thinking_text(message: dict[str, Any]) -> str:
+    """Reasoning sits beside ``content`` too. gpt-oss's chat template reads it from a
+    `thinking` key; other runtimes name it `reasoning_content`."""
+    return str(message.get("thinking") or message.get("reasoning_content") or "")
+
+
 def count_tokens_messages_batch(messages_batch: list[list[dict[str, Any]]]) -> list[int]:
-    """
-    Count tokens for a list (batch) of messages. 
-    """
     texts: list[str] = []
     text_counts_per_message_list: list[int] = []
     for messages in messages_batch:
@@ -53,7 +64,9 @@ def count_tokens_messages_batch(messages_batch: list[list[dict[str, Any]]]) -> l
         for message in messages:
             texts.append(str(message.get("role", message.get("from", ""))))
             texts.append(str(message.get("content", message.get("value", ""))))
-            count += 2
+            texts.append(_tool_call_text(message))
+            texts.append(_thinking_text(message))
+            count += 4
         text_counts_per_message_list.append(count)
 
     text_lengths = _count_tokens_texts(texts)

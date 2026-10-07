@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["annotation_id", "sc_type", "rationale", "needs_review"],
+  "properties": {
+    "annotation_id": {"type": "string", "minLength": 1},
+    "sc_type": {"enum": ["Action", "Information", "Process", "Preference", "Output"]},
+    "rationale": {"type": "string", "minLength": 1}, "needs_review": {"type": "boolean"}
+  }
+}

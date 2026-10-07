@@ -1,15 +1,13 @@
-# visualizations and stats for results from run_compactor_ablation
-
 import argparse
 from pathlib import Path
 import sys
 
 import matplotlib.pyplot as plt
+from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
+from matplotlib.offsetbox import AnchoredOffsetbox, VPacker
 from matplotlib.ticker import PercentFormatter
-from matplotlib.transforms import Bbox
 import pandas as pd
-import seaborn as sns
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
@@ -17,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq2/diff_input_size.yaml"
 
 from compaction_integrity.analyze.utils import (
+    COMPACTOR_LABEL_COLORS,
     extract_compactor_name,
     extract_context_length,
     extract_dataset_config,
@@ -28,16 +27,6 @@ from compaction_integrity.analyze.utils import (
 )
 from compaction_integrity.viz_config import set_paper_style, save_fig, set_talk_style
 
-
-"""
-evaluation_results.pkl has the following columns:
-- dataset, dataset_path, source_row_index
-- sssc_id, sssc_type, sssc_message, sssc_probe, sssc_attrs
-- probe, compactor, evaluator
-- full_with_sssc_compliant, full_without_sssc_compliant
-- compacted_context, compaction_status, compaction_error
-- compacted_compliant, retention
-"""
 
 def _context_length_to_int(context_length: str) -> int:
     return int(context_length[:-1]) * 1000
@@ -99,9 +88,7 @@ def _plot_retention_stats(
     x_pos = {context_length: i for i, context_length in enumerate(context_order)}
 
     compactor_order = ordered_compactor_labels(stats_df)
-    compactor_colors = dict(
-        zip(compactor_order, sns.color_palette(n_colors=len(compactor_order)))
-    )
+    compactor_colors = {label: COMPACTOR_LABEL_COLORS[label] for label in compactor_order}
     dataset_name_order = [
         name for name in ["hermes_cat", "wildchat_cat"] if name in set(stats_df["dataset_config"])
     ]
@@ -154,46 +141,36 @@ def _plot_retention_stats(
         )
         for name in dataset_name_order
     ]
-    save_fig(output_dir / "avg_retention_rate_by_context_length.pdf")
-    plt.close(fig)
+    # One framed box holding two sub-legends with different column counts:
+    # build each Legend unattached, stack their contents, and anchor the stack.
+    legend_kwargs = dict(
+        frameon=False, borderpad=0, fontsize=7, title_fontsize=7,
+        handlelength=2.5, labelspacing=0.3, columnspacing=1.5,
+    )
+    compactor_legend = Legend(
+        ax, compactor_handles, [h.get_label() for h in compactor_handles],
+        title="Compactor", ncol=1, **legend_kwargs,
+    )
+    dataset_legend = Legend(
+        ax, dataset_handles, [h.get_label() for h in dataset_handles],
+        title="Dataset", ncol=len(dataset_handles), **legend_kwargs,
+    )
+    legend_box = AnchoredOffsetbox(
+        loc="upper right",
+        child=VPacker(
+            children=[compactor_legend._legend_box, dataset_legend._legend_box],
+            align="center", pad=0, sep=5,
+        ),
+        bbox_to_anchor=(1.32, 1.48),
+        bbox_transform=ax.transAxes,
+        frameon=True,
+        pad=0.3,
+        borderpad=0,
+    )
+    legend_box.patch.set_edgecolor("0.8")
+    ax.add_artist(legend_box)
 
-    fig, ax = plt.subplots(figsize=(2.6, 2.2))
-    ax.axis("off")
-    compactor_legend = ax.legend(
-        handles=compactor_handles,
-        title="Compactor",
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.0),
-        ncol=1,
-        frameon=False,
-    )
-    ax.add_artist(compactor_legend)
-    fig.canvas.draw()
-    compactor_bbox = compactor_legend.get_window_extent(
-        fig.canvas.get_renderer()
-    ).transformed(ax.transAxes.inverted())
-    ax.legend(
-        handles=dataset_handles,
-        title="Dataset",
-        loc="upper center",
-        bbox_to_anchor=(0.5, compactor_bbox.y0 - 0.02),
-        ncol=len(dataset_handles),
-        frameon=False,
-    )
-    fig.canvas.draw()
-    legend_bboxes = [
-        legend.get_window_extent(fig.canvas.get_renderer()).transformed(fig.dpi_scale_trans.inverted())
-        for legend in fig.legends + [compactor_legend, ax.get_legend()]
-        if legend is not None
-    ]
-    legend_bbox = Bbox.union(legend_bboxes)
-    fig.savefig(
-        output_dir / "avg_retention_rate_by_context_length_legend.pdf",
-        format="pdf",
-        bbox_inches=legend_bbox.expanded(1.02, 1.08),
-        pad_inches=0.0,
-    )
-    print(f"Saved figure: {output_dir / 'avg_retention_rate_by_context_length_legend.pdf'}")
+    save_fig(output_dir / "avg_retention_rate_by_context_length.pdf")
     plt.close(fig)
 
 

@@ -1,17 +1,15 @@
 """Re-probe completed MCQ evaluations with an alternate downstream prober.
 
-Robustness/multi-prober validation for the compliance metric. The reviewer
-concern this answers: compliance is measured with a single fixed probing model
-(gpt-oss-120b), so a compliance score may reflect compactor-to-prober format
-compatibility rather than semantic preservation. This entrypoint holds the
-compactor output fixed -- it reuses the *identical* stored contexts and the
-*identical* stored MCQ prompts from a completed run -- and swaps only the
-downstream prober (e.g. Qwen3-30B, Gemma-4-E4B), recomputing compliance.
+Multi-prober robustness check for the compliance metric. With a single fixed
+probing model (gpt-oss-120b), a compliance score may reflect compactor-to-prober
+format compatibility rather than semantic preservation. This entrypoint holds
+the compactor output fixed (the identical stored contexts and MCQ prompts of a
+completed run) and swaps only the downstream prober (e.g. Qwen3-30B,
+Gemma-4-E4B), recomputing compliance.
 
-Because nothing but the probing model changes, the output is a drop-in
-`evaluation_results.pkl` with the same schema as the source run (only the probe
-config + the probe-output/compliance columns differ). It slots directly into a
-manifest for `analyze/main_exp.py`, exactly like a native evaluation run.
+The output is a drop-in `evaluation_results.pkl` with the source run's schema
+(only the probe config and the probe-output/compliance columns differ), usable
+in a manifest for `analyze/main_exp.py` like a native evaluation run.
 
 What is reused vs recomputed
   reused (copied from source, per row):
@@ -50,7 +48,7 @@ from compaction_integrity.runtime.env import apply_runtime_environment
 from compaction_integrity.runtime.openai_runtime import OpenAIRuntime
 from compaction_integrity.runtime.vllm_runtime import VLLMRuntime
 from compaction_integrity.runtime.vllm_serve_runtime import VLLMServeRuntime
-from compaction_integrity.scripts.eval_run_layout import (
+from compaction_integrity.eval_run_layout import (
     build_run_id,
     to_container,
     write_run_metadata,
@@ -73,7 +71,7 @@ _CASES: tuple[tuple[str, str | None, str, str, str], ...] = (
     ),
     (
         "full_without_sssc",
-        None,  # reconstructed from the dataset (un-injected messages)
+        None,
         "full_without_sssc_probe_prompt",
         "full_without_sssc_output",
         "full_without_sssc_compliant",
@@ -231,12 +229,11 @@ def _run_case(
                 )
             outputs = runtime.batch_generate(conversations)
             for i, response in zip(indices, outputs):
-                # Store the full log (analysis + answer) for transparency, but
-                # grade from the answer channel only. gpt-oss puts "[final]\nA"
-                # in response.text; Qwen/Gemma (thinking split into
-                # raw["thinking"]) put a bare "A". Grading _format_for_log
-                # instead would let the prepended "[analysis]" swallow the
-                # answer and grade every thinking prober None.
+                # Store the full log but grade the answer channel only: gpt-oss
+                # puts "[final]\nA" in response.text, Qwen/Gemma (thinking in
+                # raw["thinking"]) a bare "A". Grading _format_for_log output
+                # would let the prepended "[analysis]" swallow the answer and
+                # grade every thinking prober None.
                 df.at[i, output_col] = _format_for_log(response)
                 parsed = _parse_output(response.text or "")
                 grade_text = parsed.get("final") or parsed.get("text") or ""
@@ -287,14 +284,12 @@ def main(cfg: DictConfig) -> None:
         new_dir.mkdir(parents=True, exist_ok=True)
 
         if output_path.exists() and not overwrite:
-            # Genuine resume from a prior run of THIS prober: keep its verdicts.
+            # Resume a prior run of this prober: keep its verdicts.
             out_df = pd.read_pickle(output_path)
         else:
-            # Fresh start: source_df carries the ORIGINAL prober's grades in the
-            # output/compliance columns. Clear the prober-dependent columns for
-            # the enabled cases so the swapped prober actually recomputes them --
-            # otherwise the resume check (pd.notna(compliant_col)) would treat
-            # the source's gpt-oss grades as done and skip every row.
+            # source_df carries the original prober's grades. Clear the enabled
+            # cases' output/compliance columns, or the resume check
+            # (pd.notna(compliant_col)) would treat them as done and skip every row.
             out_df = source_df.copy()
             for _case, _ctx, _prompt, out_col, comp_col in enabled_cases:
                 out_df[out_col] = None

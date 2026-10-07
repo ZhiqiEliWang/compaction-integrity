@@ -1,5 +1,5 @@
-# visualizations and stats for results from run_compactor_ablation
-# focused on differences across SSSC types, aggregating across context_length
+# visualizations and stats focused on differences across SSSC types,
+# aggregating across context_length
 
 import argparse
 from pathlib import Path
@@ -14,8 +14,9 @@ import seaborn as sns
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
-from compaction_integrity.viz_config import set_paper_style, save_fig, set_talk_style
+from compaction_integrity.viz_config import HEATMAP_CMAP, set_paper_style, save_fig, set_talk_style
 from compaction_integrity.analyze.utils import (
+    COMPACTOR_LABEL_COLORS,
     extract_compactor_name,
     extract_dataset_config,
     fmt_compactor_label,
@@ -25,16 +26,6 @@ from compaction_integrity.analyze.utils import (
     tee_stdout,
 )
 
-
-"""
-evaluation_results.pkl has the following columns:
-- dataset, dataset_path, source_row_index
-- sssc_id, sssc_type, sssc_message, sssc_probe, sssc_attrs
-- probe, compactor, evaluator
-- full_with_sssc_compliant, full_without_sssc_compliant
-- compacted_context, compaction_status, compaction_error
-- compacted_compliant, retention
-"""
 
 
 def _load_results(manifest_path: Path, results_root: Path) -> pd.DataFrame:
@@ -99,7 +90,7 @@ def _draw_styled_heatmap(
         pivot,
         annot=True,
         fmt=".0%",
-        cmap="viridis",
+        cmap=HEATMAP_CMAP,
         vmin=0,
         vmax=1.0,
         cbar_kws={"format": PercentFormatter(1.0), "label": "Retention Rate"},
@@ -147,16 +138,21 @@ def _collapse_dataset_retention(stats_df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+# non-LLM compactors retain ~0% on every SC type; dropped from the collapsed heatmap
+HEATMAP_EXCLUDED_COMPACTORS = ("recent_5", "llmlingua2_t500")
+
+
 def _heatmap_collapsed_dataset(
     stats_df: pd.DataFrame,
     output_dir: Path,
 ) -> pd.DataFrame:
-    """One heatmap collapsed over dataset: rows=compactor, cols=SC type."""
+    """One heatmap collapsed over dataset: rows=LLM compactor, cols=SC type."""
     collapsed = _collapse_dataset_retention(stats_df)
-    sssc_order = _ordered_sssc_types(collapsed)
-    compactor_order = _ordered_compactors(collapsed)
+    plot_df = collapsed.loc[~collapsed["compactor_name"].isin(HEATMAP_EXCLUDED_COMPACTORS)]
+    sssc_order = _ordered_sssc_types(plot_df)
+    compactor_order = _ordered_compactors(plot_df)
     pivot = (
-        collapsed.pivot(index="compactor_name_label", columns="sssc_type_label", values="retention_rate")
+        plot_df.pivot(index="compactor_name_label", columns="sssc_type_label", values="retention_rate")
         .reindex(index=compactor_order, columns=sssc_order)
         .astype(float)
     )
@@ -200,7 +196,6 @@ def _grouped_bar_per_dataset(
     y_max = min(1.0, stats_df["retention_rate"].max() * 1.15 + 0.01)
     for dataset_config in sorted(stats_df["dataset_config"].unique()):
         plot_df = stats_df.loc[stats_df["dataset_config"] == dataset_config]
-        dataset_label = plot_df["dataset_config_label"].iloc[0]
         fig, ax = plt.subplots(
             figsize=(0.6 * len(sssc_order) * max(1, len(compactor_order) / 3) + 2.0, 3.0)
         )
@@ -211,6 +206,7 @@ def _grouped_bar_per_dataset(
             hue="compactor_name_label",
             order=sssc_order,
             hue_order=compactor_order,
+            palette=COMPACTOR_LABEL_COLORS,
             ax=ax,
         )
         ax.set_xlabel("SC Type")
@@ -273,8 +269,7 @@ def _scatter_all(
     compactor_offsets = np.linspace(-0.25, 0.25, n_compactors) if n_compactors > 1 else np.array([0.0])
     compactor_offset_map = dict(zip(compactor_order, compactor_offsets))
 
-    palette = sns.color_palette("tab10", n_colors=n_compactors)
-    compactor_colors = dict(zip(compactor_order, palette))
+    compactor_colors = {c: COMPACTOR_LABEL_COLORS[c] for c in compactor_order}
 
     markers = ["o", "s", "^", "D", "v", "P", "X"]
     dataset_markers = {ds: markers[i % len(markers)] for i, ds in enumerate(dataset_order)}
@@ -336,7 +331,7 @@ if __name__ == "__main__":
     args.add_argument(
         "--manifest_path",
         type=str,
-        default=str(Path(__file__).resolve().parents[3] / "config/experiments/rq2/diff_sc_type.yaml"),
+        default=str(Path(__file__).resolve().parents[3] / "config/experiments/rq3/diff_sc_type.yaml"),
         help="Manifest file listing the run ids to aggregate.",
     )
     args.add_argument(

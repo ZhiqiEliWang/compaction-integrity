@@ -34,7 +34,7 @@ class VLLMServeRuntime(ModelRuntime):
 
         cmd = ["vllm", "serve", self.model, "--port", str(port)]
 
-        # Pass through extra vllm serve flags from config
+        # Non-reserved config keys pass through as `vllm serve` flags.
         _reserved = {
             "model", "base_url", "api_key", "max_tokens", "cuda_visible_devices",
             "startup_timeout", "env", "batch", "batch_size", "retry_attempts",
@@ -49,8 +49,7 @@ class VLLMServeRuntime(ModelRuntime):
         if "cuda_visible_devices" in config:
             serve_env["CUDA_VISIBLE_DEVICES"] = str(config["cuda_visible_devices"])
         elif "CUDA_VISIBLE_DEVICES" in os.environ:
-            # Explicit re-injection (defensive — Popen would inherit anyway,
-            # but make it visible/loggable that we're pinning the GPU).
+            # Popen would inherit this anyway; set explicitly so the GPU pin is logged.
             serve_env["CUDA_VISIBLE_DEVICES"] = os.environ["CUDA_VISIBLE_DEVICES"]
 
         print(

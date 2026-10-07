@@ -7,7 +7,7 @@ from typing import Any
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
-from compaction_integrity.dataset.injection import Message, require_openai_messages
+from compaction_integrity.dataset.injection import require_openai_messages
 from compaction_integrity.dataset.loader import Convo
 from compaction_integrity.runtime.env import apply_runtime_environment
 

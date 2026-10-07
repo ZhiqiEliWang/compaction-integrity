@@ -20,6 +20,7 @@ import pandas as pd
 from scipy.stats import binomtest
 
 from compaction_integrity.tokenization import count_tokens_messages_batch
+from compaction_integrity.viz_config import PALETTE
 
 
 DATASETS = [
@@ -269,7 +270,7 @@ def _plot_deltas(summary: pd.DataFrame, output_path: Path) -> None:
             xerr=np.vstack([estimate - low, high - estimate]),
             fmt="o",
             capsize=3,
-            color="#0072B2",
+            color=PALETTE[0],
         )
         axis.axvline(0, color="black", linewidth=0.8, linestyle="--")
         axis.set_title(METRICS[metric])

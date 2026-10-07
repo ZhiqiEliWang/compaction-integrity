@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # Different-prober MCQ re-probe for the completed HermesAgent RQ1 run.
-#
-# Reuses the source run's full and compacted contexts AND its exact A/B prompts.
-# Only the downstream prober changes (Qwen3-30B, Gemma-4-E4B); compaction and
-# retention are not recomputed. Each config writes a drop-in
-# runs/<new_run_id>/evaluation_results.pkl with identical schema so it slots into
-# a main_exp-style manifest next to the gpt-oss-120b baseline.
-#
-# After both probers finish, aggregates the three probers (gpt-oss source +
-# the two swaps) into one compliance/agreement table.
+# Reuses the source run's full and compacted contexts and its exact A/B prompts; only
+# the prober changes (Qwen3-30B, Gemma-4-E4B). Each config writes a drop-in
+# runs/<new_run_id>/evaluation_results.pkl with identical schema.
+# Analyze:  analyze/prober_swap.py  (gpt-oss source + the two swaps: compliance/agreement table)
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"

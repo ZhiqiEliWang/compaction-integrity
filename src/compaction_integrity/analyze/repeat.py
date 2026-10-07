@@ -17,7 +17,7 @@ import seaborn as sns
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq2/repeat.yaml"
+DEFAULT_MANIFEST_PATH = REPO_ROOT / "config/experiments/rq3/repeat.yaml"
 
 from compaction_integrity.analyze.utils import (
     extract_compactor_name,
@@ -96,7 +96,7 @@ def _build_stats(results_df: pd.DataFrame) -> pd.DataFrame:
             else float("nan")
         )
         denom = upper_bound_rate - uninjected_rate
-        effect_retention = (
+        effective_retention = (
             calibrated / denom
             if not (np.isnan(calibrated) or np.isnan(denom)) and denom != 0
             else float("nan")
@@ -112,7 +112,7 @@ def _build_stats(results_df: pd.DataFrame) -> pd.DataFrame:
                 "n": len(group),
                 "retention_rate": retention_rate,
                 "calibrated_compliance": calibrated,
-                "effect_retention": effect_retention,
+                "effective_retention": effective_retention,
             }
         )
     stats_df = pd.DataFrame(rows).sort_values(
@@ -129,7 +129,7 @@ def _plot_metrics_by_repeat(
     repeat_values = sorted(stats_df["repeat"].unique())
     metrics = [
         ("retention_rate", "Average retention", "-", "o"),
-        ("effect_retention", "Effect retention", "--", "s"),
+        ("effective_retention", "Effective retention", "--", "s"),
     ]
     for dataset_config in sorted(stats_df["dataset_config"].unique()):
         sub = stats_df.loc[stats_df["dataset_config"] == dataset_config]

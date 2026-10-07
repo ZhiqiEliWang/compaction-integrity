@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Generative-vs-MCQ reprobe for the completed HermesAgent RQ1 run.
-#
-# Reuses the source run's full and compacted contexts. Only gpt-oss-120b probe
-# generations are recomputed; the original MCQ columns and retention verdicts
-# remain available in the new generative result pickle.
+# Reuses the source run's full and compacted contexts; only the gpt-oss-120b probe
+# generations are recomputed. The MCQ columns and retention verdicts are kept in the
+# generative result pickle.
+# Analyze:
+#   - analyze/generative_mcq.py      (generative vs MCQ compliance, Appendix D table)
 
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/../_common.sh"
@@ -19,3 +20,8 @@ python -m compaction_integrity.scripts.reprobe_generative \
   "+source_runs=[{run_id:${SOURCE_RUN_ID},label:hermes_cat_100k_gpt_oss_120b_anthropic_prompt}]" \
   '+probe={name:gpt_oss_120b_generative,model:openai/gpt-oss-120b,provider:vllm,kwargs:{batch_size:32,max_tokens:4096}}' \
   '+cases={full_with_sssc:true,full_without_sssc:true,compacted:true,compacted_post_sssc:true}'
+
+# Pairs the generative verdicts with the MCQ ones, including the prober-swap runs
+# from run_different_probe.sh, so run that first.
+run_analyze generative_mcq \
+  --results_root /data/compaction_integrity

@@ -1,13 +1,18 @@
 """Lean dataset loader for evaluation.py.
 
-Unlike GeneratedDatasetLoader, this loader 
-It only reads the `messages` column and exposes the user-turn structure needed
-for SSSC injection.
+Reads only the `messages` column and exposes the user-turn structure needed for
+SSSC injection.
+
+Natural-SC datasets (COMPINT-SWE-Natural) are the exception: their SC is already
+part of the history, so the row also carries the ablated no-SC arm and the SC
+itself. `EvalDatasetRow.sssc` being set is what marks a row as natural — the
+runner then probes `messages` / `messages_without_sssc` as given instead of
+injecting one of the `SSSCS`.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from datasets import Dataset
 
@@ -15,11 +20,17 @@ from datasets import Dataset
 Message = dict[str, str]
 Position = Literal["top", "middle", "bottom"]
 
+# Present only on natural-SC datasets; see dataset/swe_natural_curation/dataset.py build.
+NATURAL_SC_COLUMN = "messages_without_sc"
+
 
 @dataclass(frozen=True, slots=True)
 class EvalDatasetRow:
     source_row_index: int
     messages: list[Message]
+    system_prompt: str | None = None
+    sssc: dict[str, Any] | None = None
+    messages_without_sssc: list[Message] | None = None
 
     def user_turn_indices(self) -> list[int]:
         return [i for i, m in enumerate(self.messages) if m["role"] == "user"]
@@ -37,6 +48,18 @@ class EvalDatasetRow:
         if position == "bottom":
             return idxs[-1]
         raise ValueError(f"Unsupported position={position!r}")
+
+
+def _messages(raw: list[dict[str, Any]]) -> list[Message]:
+    return [{"role": m["role"], "content": m["content"]} for m in raw]
+
+
+def _split_system(messages: list[Message]) -> tuple[str | None, list[Message]]:
+    """Agent traces carry their own system prompt as the first message; the
+    probe prompt puts it back at the top, so it is lifted out of the context."""
+    if messages[0]["role"] == "system":
+        return messages[0]["content"], messages[1:]
+    return None, messages
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,13 +85,35 @@ class EvalDatasetLoader:
         return cls(dataset=ds)
 
     def rows(self) -> list[EvalDatasetRow]:
+        if NATURAL_SC_COLUMN in self.dataset.column_names:
+            return self._natural_rows()
         return [
             EvalDatasetRow(
                 source_row_index=i,
-                messages=[
-                    {"role": m["role"], "content": m["content"]}
-                    for m in row["messages"]
-                ],
+                messages=_messages(row["messages"]),
             )
             for i, row in enumerate(self.dataset)
         ]
+
+    def _natural_rows(self) -> list[EvalDatasetRow]:
+        rows: list[EvalDatasetRow] = []
+        for i, row in enumerate(self.dataset):
+            system_prompt, messages = _split_system(_messages(row["messages"]))
+            _, without = _split_system(_messages(row[NATURAL_SC_COLUMN]))
+            rows.append(
+                EvalDatasetRow(
+                    source_row_index=i,
+                    messages=messages,
+                    system_prompt=system_prompt,
+                    sssc={
+                        "id": int(row["sc_id"]),
+                        "type": str(row["sc_type"]),
+                        "sssc": str(row["sc_text"]),
+                        "probe": str(row["probe"]),
+                        "correct_answer": str(row["correct_answer"]),
+                        "incorrect_answer": str(row["incorrect_answer"]),
+                    },
+                    messages_without_sssc=without,
+                )
+            )
+        return rows

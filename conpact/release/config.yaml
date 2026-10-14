@@ -1,0 +1,46 @@
+# Export the conpact release (https://huggingface.co/datasets/ZhiqiEliWang/conpact).
+# Run from the repository root: python conpact/release/export.py [push=true]
+
+out_dir: /data/compaction_integrity/conpact_release
+hf_repo: ZhiqiEliWang/conpact
+push: false
+card: conpact/release/dataset_card.md
+
+global_seed: 42
+
+# The paper's RQ1 instances, one row per (context, SC).
+static:
+  num_rows: 50
+  sssc_attrs:
+    position: top
+    repeat: 1
+    explicitness: true
+    hard: false
+  datasets:
+    wildchat: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/wildchat_cat_100k
+    hermes: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/hermes_cat_100k
+    openresearcher: /data/compaction_integrity/default_ds/openresearcher_cat_100k
+  # Native SC, no injection: the eval config runs it with explicitness/hard off
+  # so the upper-bound condition re-presents the author's sentence verbatim.
+  swe_natural:
+    dir: /data/compaction_integrity/default_ds/swe_natural_sc_100k_n126
+    num_rows: 126
+    sssc_attrs:
+      position: top
+      repeat: 1
+      explicitness: false
+      hard: false
+
+# The paper's full-probe caches for those runs: every exported static row must
+# carry the same injected history, probe prompt, swap seed and A/B key.
+verify:
+  wildchat: /data/compaction_integrity/_full_probe_cache/wildchat_cat_100k__gpt_oss_120b__n50__full__e0603cde9b.pkl
+  hermes: /data/compaction_integrity/_full_probe_cache/hermes_cat_100k__gpt_oss_120b__n50__full__a367bc4aee.pkl
+  openresearcher: /data/compaction_integrity/_full_probe_cache/openresearcher_cat_100k__gpt_oss_120b__n50__full__0c76af0b63.pkl
+  swe_natural: /data/compaction_integrity/_full_probe_cache/swe_natural_sc_100k_n126__gpt_oss_120b__n126__full__423b340b0c.pkl
+
+# SC-free ~220k histories the `conpact` package cuts to length.
+haystacks:
+  wildchat: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/wildchat_cat_220k
+  hermes: /data/compaction_integrity/topic_cohesive_embedding_cache/stitched_datasets/hermes_cat_220k
+  openresearcher: /data/compaction_integrity/default_ds/openresearcher_cat_220k

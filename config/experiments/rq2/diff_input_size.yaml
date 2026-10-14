@@ -1,0 +1,38 @@
+experiment: diff_input_size
+runs:
+  - run_id: wildchat_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__48b92a3de7
+    label: wildchat_cat_100k_gpt_oss_120b_anthropic_prompt
+  - run_id: wildchat_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__920da2e4f9
+    label: wildchat_cat_100k_gpt_oss_120b_pi_mono_prompt
+  - run_id: wildchat_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__6c86744b0b
+    label: wildchat_cat_100k_qwen30b_anthropic_prompt
+  - run_id: wildchat_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__b0eb23376d
+    label: wildchat_cat_50k_gpt_oss_120b_anthropic_prompt
+  - run_id: wildchat_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__2689a9ab66
+    label: wildchat_cat_50k_gpt_oss_120b_pi_mono_prompt
+  - run_id: wildchat_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__b288d77c0b
+    label: wildchat_cat_50k_qwen30b_anthropic_prompt
+  - run_id: wildchat_cat_10k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__46b9068b73
+    label: wildchat_cat_10k_gpt_oss_120b_anthropic_prompt
+  - run_id: wildchat_cat_10k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__d00e276f57
+    label: wildchat_cat_10k_gpt_oss_120b_pi_mono_prompt
+  - run_id: wildchat_cat_10k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__25632d268e
+    label: wildchat_cat_10k_qwen30b_anthropic_prompt
+  - run_id: hermes_cat_100k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19f0a3c590
+    label: hermes_cat_100k_gpt_oss_120b_anthropic_prompt
+  - run_id: hermes_cat_100k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__de43fbbfd6
+    label: hermes_cat_100k_gpt_oss_120b_pi_mono_prompt
+  - run_id: hermes_cat_100k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__40f84a540c
+    label: hermes_cat_100k_qwen30b_anthropic_prompt
+  - run_id: hermes_cat_50k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__fec2df0c47
+    label: hermes_cat_50k_gpt_oss_120b_anthropic_prompt
+  - run_id: hermes_cat_50k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__0b590722b5
+    label: hermes_cat_50k_gpt_oss_120b_pi_mono_prompt
+  - run_id: hermes_cat_50k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__cdd5446bb4
+    label: hermes_cat_50k_qwen30b_anthropic_prompt
+  - run_id: hermes_cat_10k__gpt_oss_120b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__19a19c2ae5
+    label: hermes_cat_10k_gpt_oss_120b_anthropic_prompt
+  - run_id: hermes_cat_10k__gpt_oss_120b_pi_mono_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__e4def42e86
+    label: hermes_cat_10k_gpt_oss_120b_pi_mono_prompt
+  - run_id: hermes_cat_10k__qwen30b_anthropic_prompt__gpt_oss_120b__llm_gpt_5_4__n50__full__d0d8e12c84
+    label: hermes_cat_10k_qwen30b_anthropic_prompt

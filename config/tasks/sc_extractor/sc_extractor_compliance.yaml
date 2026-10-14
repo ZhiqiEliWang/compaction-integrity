@@ -1,0 +1,25 @@
+# RQ4: compliance and effective retention of the extractor condition, C(H) ⊕ S_t (Eq. 9),
+# on every cached RQ1 run of HermesAgent, OpenResearcher and WildChat.
+# Runner: exp_sh/rq4/run_sc_extractor.sh
+overwrite: false
+
+results_root: /data/compaction_integrity
+
+# RQ1 manifests (repo-relative); every run listed gets the extractor condition.
+manifests:
+  - config/experiments/rq1/main.yaml
+
+# Dataset name -> SC-extractor run under {results_root}/sc_extractor_runs.
+extractor_runs:
+  hermes_cat_100k: hermes_cat_100k__qwen3_5_9b__llm_gpt_5_4
+  openresearcher_cat_100k: openresearcher_cat_100k__qwen3_5_9b__llm_gpt_5_4
+  wildchat_cat_100k: wildchat_cat_100k__qwen3_5_9b__llm_gpt_5_4
+
+# Same prober as the RQ1 runs.
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096

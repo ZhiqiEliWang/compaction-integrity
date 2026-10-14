@@ -1,0 +1,55 @@
+results_root: /data/compaction_integrity
+test: false
+output_dir: ${results_root}/analysis/prompt_targeting
+
+datasets:
+  - wildchat_cat_100k
+
+run_match:
+  num_rows: 50
+  global_seed: 42
+  probe_name: gpt_oss_120b
+  sssc_attrs:
+    position: top
+    repeat: 1
+    explicitness: true
+    hard: false
+
+prompt_pairs:
+  gpt_oss_120b:
+    baseline: gpt_oss_120b_anthropic_prompt
+    targeted: gpt_oss_120b_anthropic_sc_targeted_prompt
+    baseline_config:
+      model: openai/gpt-oss-120b
+      provider: vllm
+      kwargs:
+        batch: true
+        max_tokens: 4096
+        retry_attempts: 5
+      prompt: anthropic
+    targeted_config:
+      model: openai/gpt-oss-120b
+      provider: vllm
+      kwargs:
+        batch: true
+        max_tokens: 4096
+        retry_attempts: 5
+      prompt: anthropic-sc-targeted
+  qwen30b:
+    baseline: qwen30b_anthropic_prompt
+    targeted: qwen30b_anthropic_sc_targeted_prompt
+    baseline_config:
+      model: Qwen/Qwen3-30B-A3B-Thinking-2507
+      provider: vllm
+      kwargs:
+        batch: true
+        max_tokens: 4096
+      prompt: anthropic
+    targeted_config:
+      model: Qwen/Qwen3-30B-A3B-Thinking-2507
+      provider: vllm
+      kwargs:
+        batch: true
+        max_tokens: 4096
+        retry_attempts: 5
+      prompt: anthropic-sc-targeted

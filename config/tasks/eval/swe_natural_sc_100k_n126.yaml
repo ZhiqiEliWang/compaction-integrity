@@ -1,0 +1,96 @@
+# COMPINT-SWE-Natural, n126: the four conditions on native GitHub-issue trajectories,
+# author-written SCs only (SCs cut from the generated "New interfaces introduced:"
+# spec blocks of swe-rebench-v2 tasks are excluded). 126 SCs over 114 tasks:
+#   rows 0-34   swe_natural_sc_100k (nebius OpenHands trajectories, unchanged)
+#   rows 35-56  Open-SWE open_swe_250 batch minus its 13 spec-derived rows
+#   rows 57-125 Open-SWE batches 251_500 (25) and 501_750 (44), annotated by
+#               dataset/swe_natural_curation/annotate_sc.py with gpt-5.6-terra
+# The SC is already in the history, so case 2 comes from the dataset's ablated
+# arm (`messages_without_sc`) instead of an omitted injection. Compactor/probe/
+# judge matrix matches wildchat100k.yaml (Gemma pinned to a revision, below) so
+# results are comparable.
+
+test: false # if true, only run 5 entries from each dataset and store under runs_test/
+overwrite: false # if true, overwrite existing results for each canonical run_id
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+sssc_attrs:
+  # Fixed by the source, not chosen: the SC sits where the issue author wrote it.
+  # explicitness/hard must stay false so case 4 re-presents the author's own
+  # sentence rather than wrapping it in "for the rest of this session".
+  position: top
+  repeat: 1
+  explicitness: false
+  hard: false
+
+datasets:
+  swe_natural_sc_100k_n126:
+    dir: /data/compaction_integrity/default_ds/swe_natural_sc_100k_n126
+    num_rows: 126
+
+compactors:
+  gpt_oss_120b_anthropic_prompt:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      tensor_parallel_size: 2 # GPUs 0,1; the prober stays at 1 so its step-1 cache is reused
+      batch: true
+      max_tokens: 4096
+      retry_attempts: 5
+    prompt: anthropic
+
+  gpt_oss_120b_pi_mono_prompt:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      tensor_parallel_size: 2 # GPUs 0,1; the prober stays at 1 so its step-1 cache is reused
+      batch: true
+      max_tokens: 4096
+    prompt: pi_mono
+
+  qwen30b_anthropic_prompt:
+    model: Qwen/Qwen3-30B-A3B-Thinking-2507
+    provider: vllm
+    kwargs:
+      tensor_parallel_size: 2 # GPUs 0,1; the prober stays at 1 so its step-1 cache is reused
+      batch: true
+      max_tokens: 4096
+    prompt: anthropic
+
+  gemma_4_anthropic_prompt:
+    model: google/gemma-4-E4B-it
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      # `main` now points at a revision whose cached snapshot has no weights and
+      # no processor_config.json, so vLLM cannot build the multimodal processor.
+      # Pinned to the complete snapshot behind the July 2026 gemma-4 RQ1 runs.
+      revision: a4c2d58be94dda072b918d9db64ee85c8ed34e3f
+    prompt: anthropic
+
+  recent_5:
+    model: recent-n
+
+  llmlingua2_t500:
+    target_token: 500
+    model: llmlingua2
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false
+
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096

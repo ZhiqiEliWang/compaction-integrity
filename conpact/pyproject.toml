@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conpact"
+version = "0.1.0"
+description = "Does a side constraint survive context compaction? The COMPINT benchmark from 'Lost in Context Compaction'."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Zhiqi Wang" }]
+dependencies = [
+    "datasets",
+    "openai",
+    "tqdm",
+]
+
+[project.urls]
+Paper = "https://arxiv.org/abs/2608.11242"
+Dataset = "https://huggingface.co/datasets/ZhiqiEliWang/conpact"
+
+[tool.setuptools.packages.find]
+where = ["src"]

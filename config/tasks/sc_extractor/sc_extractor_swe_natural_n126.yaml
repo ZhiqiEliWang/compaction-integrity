@@ -1,0 +1,49 @@
+# RQ4: the SWE-Natural extractor (prompts.build_swe_natural_sc_extraction_prompts) on
+# SWE-Natural n126. Runner: exp_sh/rq4/run_sc_extractor_swe_natural.sh
+test: false # if true, only run 5 entries from each dataset and store under sc_extractor_runs_test/
+overwrite: false
+
+results_root: /data/compaction_integrity
+
+global_seed: 42
+
+# Natural-SC dataset: nothing is injected, the SC sits in the issue text. Matches
+# config/tasks/eval/swe_natural_sc_100k_n126.yaml. The extractor reads only the
+# issue (the trace's one user query), not the tool observations stored as user turns.
+sssc_attrs:
+  position: top
+  repeat: 1
+  explicitness: false
+  hard: false
+
+datasets:
+  swe_natural_sc_100k_n126:
+    dir: /data/compaction_integrity/default_ds/swe_natural_sc_100k_n126
+    num_rows: 126
+
+sc_extractors:
+  qwen3_5_9b_swe_natural:
+    model: Qwen/Qwen3.5-9B
+    provider: vllm
+    prompt: swe_natural_extractor
+    verify_evidence: true  # drop items whose evidence is not in the text read (checked sentence by sentence)
+    # The issue is read as consecutive 5-sentence windows, one call each: on a whole issue
+    # the 9B model returns the author's SCs as an empty list.
+    window_sentences: 5
+    kwargs:
+      batch: true
+      max_tokens: 4096
+      enable_thinking: false
+      max_model_len: 32768  # a window's prompt is at most ~14.4k tokens
+      gpu_memory_utilization: 0.25
+      # Qwen3.5 is hybrid: each running sequence holds one Mamba cache block, and a 0.25
+      # share has fewer than vLLM's default of 1024.
+      max_num_seqs: 128
+
+evaluators:
+  llm_gpt_5_4:
+    model: gpt-5.4
+    provider: openai
+    kwargs:
+      batch: false
+      flex: false

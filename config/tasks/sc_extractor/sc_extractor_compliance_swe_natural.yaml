@@ -1,0 +1,23 @@
+# RQ4: compliance and effective retention of the SWE-Natural extractor condition,
+# C(H) ⊕ S_t (Eq. 9), on every cached RQ1 run of SWE-Natural n126.
+# Runner: exp_sh/rq4/run_sc_extractor_swe_natural.sh
+overwrite: false
+
+results_root: /data/compaction_integrity
+
+# RQ1 manifests (repo-relative); every run listed gets the extractor condition.
+manifests:
+  - config/experiments/rq1/swe_natural_sc_n126.yaml
+
+# Dataset name -> SC-extractor run under {results_root}/sc_extractor_runs.
+extractor_runs:
+  swe_natural_sc_100k_n126: swe_natural_sc_100k_n126__qwen3_5_9b_swe_natural__llm_gpt_5_4
+
+# Same prober as the RQ1 runs.
+probe:
+  gpt_oss_120b:
+    model: openai/gpt-oss-120b
+    provider: vllm
+    kwargs:
+      batch: true
+      max_tokens: 4096

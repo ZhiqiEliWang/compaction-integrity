@@ -1,0 +1,1 @@
+"""Compaction integrity scaffold package."""

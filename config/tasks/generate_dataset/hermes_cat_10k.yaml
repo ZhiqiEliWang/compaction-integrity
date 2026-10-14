@@ -1,0 +1,19 @@
+test: false # if true, only generate 5 concatinated entries
+# output dir
+output_dir: /data/compaction_integrity/default_ds
+
+
+dataset: hermes # details of loading is predefined in loader.py
+ds_name: hermes_cat_10k
+
+# the number of 10k-length conversation in the final dataset
+num_convo: 100
+
+stitching_method: topic_cohesive
+embedding_col: task # the column to take embedding from for topic_cohesive stitching.
+embedding_cache:
+  path: /data/compaction_integrity/topic_cohesive_embedding_cache
+
+# concat: true for short multi-turn ds
+concat: true
+target_size: 10k # target size of the concatenated data
